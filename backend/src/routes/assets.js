@@ -98,7 +98,7 @@ router.post('/', authenticateToken, requireRole(['AssetManager', 'Admin']), asyn
  */
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const { category_id, status, is_bookable, search } = req.query;
+    const { category_id, status, is_bookable, department_id, search } = req.query;
     const db = getDb();
 
     let query = `
@@ -124,6 +124,17 @@ router.get('/', authenticateToken, async (req, res, next) => {
       params.push(is_bookable === 'true' || is_bookable === '1' ? 1 : 0);
     }
 
+    if (department_id) {
+      query += ` AND EXISTS (
+        SELECT 1 FROM allocations al
+        LEFT JOIN users u ON al.user_id = u.id
+        WHERE al.asset_id = a.id 
+          AND al.status = 'Active' 
+          AND (al.department_id = ? OR u.department_id = ?)
+      )`;
+      params.push(department_id, department_id);
+    }
+
     if (search) {
       query += ` AND (a.name LIKE ? OR a.asset_tag LIKE ? OR a.serial_number LIKE ? OR a.location LIKE ?)`;
       const searchPattern = `%${search}%`;
@@ -134,6 +145,82 @@ router.get('/', authenticateToken, async (req, res, next) => {
 
     const assets = await db.all(query, ...params);
     res.json({ assets });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route GET /api/assets/:idOrTag
+ * @desc Get single asset details, current allocation state, allocation history, and maintenance history
+ */
+router.get('/:idOrTag', authenticateToken, async (req, res, next) => {
+  try {
+    const { idOrTag } = req.params;
+    const db = getDb();
+
+    // 1. Fetch core asset details (supports ID or Tag lookup)
+    let assetQuery = `
+      SELECT a.*, c.name as category_name 
+      FROM assets a 
+      JOIN categories c ON a.category_id = c.id 
+      WHERE 
+    `;
+    const isTag = idOrTag.toString().toUpperCase().startsWith('AF-');
+    if (isTag) {
+      assetQuery += `a.asset_tag = ?`;
+    } else {
+      assetQuery += `a.id = ?`;
+    }
+
+    const asset = await db.get(assetQuery, idOrTag);
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+
+    // 2. Fetch current active allocation (if any)
+    const activeAllocation = await db.get(
+      `SELECT al.*, u.name as user_name, u.email as user_email, d.name as department_name, allocator.name as allocator_name
+       FROM allocations al
+       LEFT JOIN users u ON al.user_id = u.id
+       LEFT JOIN departments d ON al.department_id = d.id
+       LEFT JOIN users allocator ON al.allocated_by = allocator.id
+       WHERE al.asset_id = ? AND al.status = 'Active' AND al.returned_date IS NULL
+       LIMIT 1`,
+      asset.id
+    );
+
+    // 3. Fetch full allocation history (newest first)
+    const allocationHistory = await db.all(
+      `SELECT al.*, u.name as user_name, u.email as user_email, d.name as department_name, allocator.name as allocator_name
+       FROM allocations al
+       LEFT JOIN users u ON al.user_id = u.id
+       LEFT JOIN departments d ON al.department_id = d.id
+       LEFT JOIN users allocator ON al.allocated_by = allocator.id
+       WHERE al.asset_id = ?
+       ORDER BY al.id DESC`,
+      asset.id
+    );
+
+    // 4. Fetch full maintenance history (newest first)
+    const maintenanceHistory = await db.all(
+      `SELECT mr.*, u.name as requester_name, u.email as requester_email, tech.name as technician_name
+       FROM maintenance_requests mr
+       JOIN users u ON mr.requested_by = u.id
+       LEFT JOIN users tech ON mr.assigned_technician_id = tech.id
+       WHERE mr.asset_id = ?
+       ORDER BY mr.id DESC`,
+      asset.id
+    );
+
+    res.json({
+      asset,
+      activeAllocation: activeAllocation || null,
+      history: {
+        allocations: allocationHistory,
+        maintenance: maintenanceHistory
+      }
+    });
   } catch (error) {
     next(error);
   }
