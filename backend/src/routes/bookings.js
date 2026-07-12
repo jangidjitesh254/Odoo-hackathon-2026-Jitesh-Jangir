@@ -141,4 +141,56 @@ router.get('/', authenticateToken, async (req, res, next) => {
   }
 });
 
+/**
+ * @route PUT /api/bookings/:id/cancel
+ * @desc Cancel a resource booking
+ */
+router.put('/:id/cancel', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const db = getDb();
+
+    // 1. Verify booking exists
+    const booking = await db.get('SELECT * FROM bookings WHERE id = ?', id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking record not found' });
+    }
+
+    // 2. Permission check: Only creator, AssetManager, or Admin can cancel
+    if (booking.user_id !== req.user.id && !['AssetManager', 'Admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to cancel this booking' });
+    }
+
+    if (booking.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Booking is already cancelled' });
+    }
+
+    // 3. Update status to Cancelled
+    await db.run("UPDATE bookings SET status = 'Cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
+
+    // Get asset details for audit/notifications
+    const asset = await db.get('SELECT name FROM assets WHERE id = ?', booking.asset_id);
+
+    // Log action
+    await db.run(
+      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Cancel Booking', ?)`,
+      req.user.id,
+      `Cancelled booking ${id} for resource ${asset ? asset.name : ''}`
+    );
+
+    // Notify user
+    await db.run(
+      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+      booking.user_id,
+      'Booking Cancelled',
+      `Your booking for ${asset ? asset.name : ''} starting at ${booking.start_time} has been cancelled.`,
+      'Booking Cancelled'
+    );
+
+    res.json({ message: 'Booking successfully cancelled' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

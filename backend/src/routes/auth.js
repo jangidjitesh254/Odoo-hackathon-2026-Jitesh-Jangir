@@ -11,7 +11,7 @@ const router = express.Router();
  */
 router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, department_id } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
@@ -31,10 +31,11 @@ router.post('/register', async (req, res, next) => {
 
     // Insert user with default role 'Employee' and status 'Active'
     const result = await db.run(
-      `INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, 'Employee', 'Active')`,
+      `INSERT INTO users (name, email, password_hash, role, department_id, status) VALUES (?, ?, ?, 'Employee', ?, 'Active')`,
       name,
       email,
-      passwordHash
+      passwordHash,
+      department_id || null
     );
 
     const newUserId = result.lastID;

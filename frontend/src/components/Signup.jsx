@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InputField from './common/InputField';
 import SelectField from './common/SelectField';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Signup Component for AssetFlow.
@@ -12,6 +13,7 @@ import SelectField from './common/SelectField';
  * @param {function} props.onNavigateToLogin - Callback to navigate to Login page
  */
 export default function Signup({ onNavigateToLogin }) {
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -23,17 +25,24 @@ export default function Signup({ onNavigateToLogin }) {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
-  // Department choices for an enterprise ERP
-  const departments = [
-    { value: 'operations', label: 'Operations & Facilities' },
-    { value: 'it', label: 'IT & Infrastructure' },
-    { value: 'finance', label: 'Finance & Accounting' },
-    { value: 'hr', label: 'Human Resources' },
-    { value: 'engineering', label: 'Engineering & R&D' },
-    { value: 'procurement', label: 'Procurement & Logistics' },
-    { value: 'legal', label: 'Legal & Compliance' },
-  ];
+  // Fetch departments on mount
+  useEffect(() => {
+    async function fetchDepts() {
+      try {
+        const response = await fetch('http://localhost:5000/api/departments');
+        const data = await response.json();
+        if (data && data.departments) {
+          const mapped = data.departments.map(d => ({ value: d.id, label: d.name }));
+          setDepartments(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    }
+    fetchDepts();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,17 +72,17 @@ export default function Signup({ onNavigateToLogin }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setLoading(true);
     setSuccess('');
+    setErrors({});
 
-    // Simulate API registration delay
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess('Account created successfully! Welcome to AssetFlow. (Simulated)');
+    try {
+      await register(formData.fullName, formData.email, formData.password, formData.department);
+      setSuccess('Account created successfully! Please log in.');
       setFormData({
         fullName: '',
         email: '',
@@ -81,7 +90,14 @@ export default function Signup({ onNavigateToLogin }) {
         password: '',
         confirmPassword: '',
       });
-    }, 1500);
+      setTimeout(() => {
+        onNavigateToLogin();
+      }, 2000);
+    } catch (err) {
+      setErrors({ general: err.message || 'Registration failed. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,6 +130,27 @@ export default function Signup({ onNavigateToLogin }) {
           Registration sets up an <strong>Employee account</strong> with standard privileges. System administrators will configure role-based permissions (Asset Manager, Admin, Department Head) in the Employee Directory once approved.
         </p>
       </div>
+
+      {errors.general && (
+        <div className="form-alert form-alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {errors.general}
+        </div>
+      )}
 
       {success && (
         <div className="form-alert form-alert-success">

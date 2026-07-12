@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import InputField from './common/InputField';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Login Component for AssetFlow.
@@ -10,6 +11,7 @@ import InputField from './common/InputField';
  * @param {function} props.onNavigateToSignup - Callback to navigate to Signup page
  */
 export default function Login({ onNavigateToSignup }) {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,10 +32,9 @@ export default function Login({ onNavigateToSignup }) {
     if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Simple basic validation
     if (!formData.email || !formData.password) {
       setError('Please fill in all required fields.');
       return;
@@ -43,11 +44,14 @@ export default function Login({ onNavigateToSignup }) {
     setError('');
     setSuccess('');
 
-    // Simulate API request delay
-    setTimeout(() => {
+    try {
+      await login(formData.email, formData.password);
+      setSuccess('Welcome back! Authentication successful.');
+    } catch (err) {
+      setError(err.message || 'Invalid email or password.');
+    } finally {
       setLoading(false);
-      setSuccess('Welcome back! Authentication successful (Simulated).');
-    }, 1200);
+    }
   };
 
   return (
