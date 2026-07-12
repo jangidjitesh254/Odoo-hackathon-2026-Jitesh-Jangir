@@ -13,7 +13,7 @@ async function request(endpoint, options = {}) {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
-
+ 
   const config = {
     ...options,
     headers,
