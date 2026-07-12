@@ -2,12 +2,12 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 
 import Sidebar from "./components/layout/Sidebar";
 import Navbar from "./components/layout/Navbar";
-
 import Dashboard from "./components/pages/Dashboard";
 import OrganizationSetup from "./components/pages/OrganizationSetup";
 import AssetDirectory from "./components/pages/AssetDirectory";
 import AssetDetail from "./components/pages/AssetDetail";
 import Allocations from "./components/pages/Allocations";
+import Maintenance from "./components/pages/Maintenance";
 import Notifications from "./components/pages/Notifications";
 import ResourceBooking from "./components/ui/ResourceBooking";
 import AuthLayout from "./components/AuthLayout";
@@ -135,6 +135,7 @@ function App() {
             </MainLayout>
           }
         />
+        <Route path="/maintenance" element={<MainLayout><Maintenance /></MainLayout>} />
       </Routes>
     </BrowserRouter>
   );

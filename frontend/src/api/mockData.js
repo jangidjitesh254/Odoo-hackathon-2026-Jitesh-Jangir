@@ -141,3 +141,20 @@ export const activityLogs = [
   { id: 6, actor: "Auditor - Amit Kumar", action: "Flagged discrepancy", target: "Projector AF-0003 - Damaged", time: "2026-07-10 11:30" },
   { id: 7, actor: "Admin", action: "Created department", target: "IT Support", time: "2026-07-09 10:00" },
 ];
+
+export let maintenanceRequests = [
+  {
+    id: 1,
+    assetId: 3,
+    assetTag: "AF-0003",
+    assetName: "Projector Epson X200",
+    raisedBy: "Rahul Verma",
+    issue: "Dim projection, flickering image",
+    priority: "Medium",
+    status: "In Progress", // Pending | Approved | Rejected | Technician Assigned | In Progress | Resolved
+    technician: "Vikram Singh",
+    createdDate: "2026-07-02",
+  },
+];
+
+export const technicians = ["Vikram Singh", "Sunil Yadav", "External Vendor - TechFix"];
