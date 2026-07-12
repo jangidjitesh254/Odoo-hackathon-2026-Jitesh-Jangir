@@ -125,6 +125,30 @@ router.post('/:id/approve', authenticateToken, requireRole(['AssetManager', 'Dep
       transfer.asset_id
     );
 
+    // Enforce Department Head scope checks
+    if (req.user.role === 'DepartmentHead') {
+      if (!currentAllocation) {
+        return res.status(400).json({ error: 'Cannot approve transfer for an asset with no active allocation.' });
+      }
+
+      // Determine holding department (either direct department allocation, or user's department)
+      let holdingDeptId = currentAllocation.department_id;
+      if (!holdingDeptId && currentAllocation.user_id) {
+        const holderUser = await db.get('SELECT department_id FROM users WHERE id = ?', currentAllocation.user_id);
+        holdingDeptId = holderUser ? holderUser.department_id : null;
+      }
+
+      if (!holdingDeptId) {
+        return res.status(403).json({ error: 'Forbidden', message: 'This asset is not currently associated with any department.' });
+      }
+
+      // Verify current user is the head of the holding department
+      const dept = await db.get('SELECT head_id FROM departments WHERE id = ?', holdingDeptId);
+      if (!dept || dept.head_id !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden', message: 'You can only approve transfers for assets allocated within your department.' });
+      }
+    }
+
     // 3. Update Transfer Status to 'Approved'
     await db.run(
       `UPDATE transfers 

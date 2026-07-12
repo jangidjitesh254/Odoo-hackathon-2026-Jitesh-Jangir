@@ -128,9 +128,9 @@ router.post('/', authenticateToken, requireRole(['AssetManager', 'Admin']), asyn
 
 /**
  * @route POST /api/allocations/:id/return
- * @desc Return an allocated asset (mark returned, capture condition notes, set asset to Available)
+ * @desc Return an allocated asset (mark returned, capture condition notes, set asset to Available) (AssetManager or Admin only)
  */
-router.post('/:id/return', authenticateToken, async (req, res, next) => {
+router.post('/:id/return', authenticateToken, requireRole(['AssetManager', 'Admin']), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { return_notes, condition } = req.body;
@@ -191,6 +191,54 @@ router.post('/:id/return', authenticateToken, async (req, res, next) => {
       allocationId: id,
       assetId: allocation.asset_id,
       status: 'Available'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route POST /api/allocations/:id/request-return
+ * @desc Initiate a return request for an allocated asset (Employee role)
+ */
+router.post('/:id/request-return', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const db = getDb();
+
+    // Verify active allocation belongs to the employee
+    const allocation = await db.get(
+      `SELECT al.*, a.name as asset_name, u.name as user_name 
+       FROM allocations al
+       JOIN assets a ON al.asset_id = a.id
+       LEFT JOIN users u ON al.user_id = u.id
+       WHERE al.id = ? AND al.status = 'Active' AND al.returned_date IS NULL`,
+      id
+    );
+
+    if (!allocation) {
+      return res.status(404).json({ error: 'Active allocation record not found' });
+    }
+
+    if (allocation.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You can only request return for assets allocated to you.' });
+    }
+
+    // Notify Asset Managers
+    const managers = await db.all("SELECT id FROM users WHERE role = 'AssetManager'");
+    for (const manager of managers) {
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+        manager.id,
+        'Return Requested',
+        `Employee ${allocation.user_name || 'User'} has requested to return the asset: ${allocation.asset_name} (allocation #${id}).`,
+        'Return Requested'
+      );
+    }
+
+    res.json({
+      message: 'Return request initiated successfully. Asset Manager has been notified.',
+      allocationId: id
     });
   } catch (error) {
     next(error);
