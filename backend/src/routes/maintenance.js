@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * @route POST /api/maintenance
- * @desc Quick Action: Raise a new Maintenance Request
+ * @desc Quick Action: Raise a new Maintenance Request (Employee/Dept Head/Manager)
  */
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
@@ -48,7 +48,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
       `Raised maintenance request (ID: ${newRequestId}) for asset ${asset.name} (ID: ${asset_id})`
     );
 
-    // Get asset managers to notify them (optional, but good for completeness)
+    // Get asset managers to notify them
     const managers = await db.all("SELECT id FROM users WHERE role = 'AssetManager'");
     for (const manager of managers) {
       await db.run(
@@ -86,10 +86,14 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const db = getDb();
 
     let query = `
-      SELECT mr.*, a.name as asset_name, a.asset_tag, u.name as requester_name 
+      SELECT mr.*, 
+             a.name as asset_name, a.asset_tag, a.serial_number, a.condition as asset_condition,
+             u.name as requester_name, u.email as requester_email,
+             tech.name as technician_name, tech.email as technician_email
       FROM maintenance_requests mr
       JOIN assets a ON mr.asset_id = a.id
       JOIN users u ON mr.requested_by = u.id
+      LEFT JOIN users tech ON mr.assigned_technician_id = tech.id
       WHERE 1=1
     `;
     const params = [];
@@ -104,6 +108,12 @@ router.get('/', authenticateToken, async (req, res, next) => {
       params.push(asset_id);
     }
 
+    // Employees only see their own requests unless elevated
+    if (req.user.role === 'Employee') {
+      query += ` AND (mr.requested_by = ? OR mr.assigned_technician_id = ?)`;
+      params.push(req.user.id, req.user.id);
+    }
+
     query += ` ORDER BY mr.id DESC`;
 
     const requests = await db.all(query, ...params);
@@ -114,240 +124,179 @@ router.get('/', authenticateToken, async (req, res, next) => {
 });
 
 /**
- * @route POST /api/maintenance/:id/review
- * @desc Approve or Reject a maintenance request (AssetManager only)
- *       On approval, transitions the asset's status to 'Under Maintenance'.
+ * @route PUT /api/maintenance/:id/status
+ * @desc Update the status of a maintenance request (approvals, technician assignment, resolution)
  */
-router.post('/:id/review', authenticateToken, requireRole(['AssetManager']), async (req, res, next) => {
+router.put('/:id/status', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, rejection_remarks } = req.body; // status must be 'Approved' or 'Rejected'
+    const { status, assigned_technician_id, resolution_notes, condition } = req.body;
+    const role = req.user.role;
+    const userId = req.user.id;
 
-    if (!['Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Status must be Approved or Rejected' });
+    const allowedStatuses = ['Approved', 'Rejected', 'Technician Assigned', 'In Progress', 'Resolved'];
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` });
     }
 
     const db = getDb();
 
-    const request = await db.get(
-      'SELECT mr.*, a.name as asset_name FROM maintenance_requests mr JOIN assets a ON mr.asset_id = a.id WHERE mr.id = ?',
-      id
-    );
-
-    if (!request) {
-      return res.status(404).json({ error: 'Maintenance request not found' });
-    }
-
-    if (request.status !== 'Pending') {
-      return res.status(400).json({ error: `Cannot review a request that is already ${request.status}` });
-    }
-
-    // Update request status
-    await db.run(
-      `UPDATE maintenance_requests 
-       SET status = ?, resolution_notes = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      status,
-      rejection_remarks || null,
-      id
-    );
-
-    // If approved, transition asset status to 'Under Maintenance'
-    if (status === 'Approved') {
-      await db.run("UPDATE assets SET status = 'Under Maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?", request.asset_id);
-    }
-
-    // Log action
-    await db.run(
-      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Review Maintenance', ?)`,
-      req.user.id,
-      `Reviewed maintenance request (ID: ${id}) for asset ${request.asset_name} - Result: ${status}`
-    );
-
-    // Notify requester
-    await db.run(
-      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
-      request.requested_by,
-      `Maintenance ${status}`,
-      `Your maintenance request for ${request.asset_name} has been ${status.toLowerCase()}. Remarks: ${rejection_remarks || 'None'}`,
-      `Maintenance ${status}`
-    );
-
-    res.json({
-      message: `Maintenance request ${status.toLowerCase()} successfully`,
-      requestId: id,
-      status
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @route POST /api/maintenance/:id/assign
- * @desc Assign a technician to an approved request (AssetManager only)
- */
-router.post('/:id/assign', authenticateToken, requireRole(['AssetManager']), async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { assigned_technician_id } = req.body;
-
-    if (!assigned_technician_id) {
-      return res.status(400).json({ error: 'Assigned technician user ID is required' });
-    }
-
-    const db = getDb();
-
-    // Verify request
-    const request = await db.get(
-      'SELECT mr.*, a.name as asset_name FROM maintenance_requests mr JOIN assets a ON mr.asset_id = a.id WHERE mr.id = ?',
-      id
-    );
-
-    if (!request) {
-      return res.status(404).json({ error: 'Maintenance request not found' });
-    }
-
-    if (request.status !== 'Approved') {
-      return res.status(400).json({ error: 'Can only assign a technician to an Approved request' });
-    }
-
-    // Verify technician user exists
-    const techUser = await db.get('SELECT id, name FROM users WHERE id = ?', assigned_technician_id);
-    if (!techUser) {
-      return res.status(400).json({ error: 'Technician user not found' });
-    }
-
-    // Update status
-    await db.run(
-      `UPDATE maintenance_requests 
-       SET status = 'Technician Assigned', assigned_technician_id = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      assigned_technician_id,
-      id
-    );
-
-    // Log action
-    await db.run(
-      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Assign Technician', ?)`,
-      req.user.id,
-      `Assigned technician ${techUser.name} to maintenance request (ID: ${id})`
-    );
-
-    // Notify technician
-    await db.run(
-      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Assigned', ?, 'Maintenance Assigned')`,
-      assigned_technician_id,
-      `You have been assigned a new maintenance repair request for asset: ${request.asset_name}.`
-    );
-
-    res.json({
-      message: 'Technician assigned successfully',
-      requestId: id,
-      assignedTo: techUser.name
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @route POST /api/maintenance/:id/start
- * @desc Move request status to 'In Progress'
- */
-router.post('/:id/start', authenticateToken, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const db = getDb();
-
+    // Fetch the request
     const request = await db.get('SELECT * FROM maintenance_requests WHERE id = ?', id);
     if (!request) {
       return res.status(404).json({ error: 'Maintenance request not found' });
     }
 
-    if (!['Approved', 'Technician Assigned'].includes(request.status)) {
-      return res.status(400).json({ error: `Cannot start work for request with status: ${request.status}` });
+    const asset = await db.get('SELECT name, asset_tag, status FROM assets WHERE id = ?', request.asset_id);
+
+    // Permission checks:
+    // - Only Asset Manager or Admin can Approve, Reject, or Assign Technicians
+    if (['Approved', 'Rejected', 'Technician Assigned'].includes(status) && !['AssetManager', 'Admin'].includes(role)) {
+      return res.status(403).json({ error: 'Forbidden: Only Asset Managers can approve/reject or assign technicians' });
     }
 
-    // Update status to In Progress
-    await db.run(
-      "UPDATE maintenance_requests SET status = 'In Progress', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      id
-    );
+    // - Tech can update In Progress or Resolved if assigned, or Manager/Admin
+    if (['In Progress', 'Resolved'].includes(status)) {
+      const isAssignedTech = request.assigned_technician_id === userId;
+      if (!isAssignedTech && !['AssetManager', 'Admin'].includes(role)) {
+        return res.status(403).json({ error: 'Forbidden: Only the assigned technician or Asset Manager can start or resolve repairs' });
+      }
+    }
+
+    // Handle each status transition logic
+    if (status === 'Approved') {
+      // Set asset status to 'Under Maintenance'
+      await db.run("UPDATE assets SET status = 'Under Maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?", request.asset_id);
+      
+      // Update request status
+      await db.run(
+        `UPDATE maintenance_requests SET status = 'Approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        id
+      );
+
+      // Notify requester
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Approved', ?, 'Maintenance Approved')`,
+        request.requested_by,
+        `Your maintenance request for asset ${asset ? asset.name : ''} has been approved.`
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Approve Maintenance', ?)`,
+        userId,
+        `Approved maintenance request ${id} (Asset: ${asset ? asset.name : ''})`
+      );
+
+    } else if (status === 'Rejected') {
+      // Revert asset status back to its normal condition (usually remains whatever it was since not approved)
+      // Update request status
+      await db.run(
+        `UPDATE maintenance_requests SET status = 'Rejected', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        id
+      );
+
+      // Notify requester
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Rejected', ?, 'Maintenance Rejected')`,
+        request.requested_by,
+        `Your maintenance request for asset ${asset ? asset.name : ''} was rejected.`
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Reject Maintenance', ?)`,
+        userId,
+        `Rejected maintenance request ${id} (Asset: ${asset ? asset.name : ''})`
+      );
+
+    } else if (status === 'Technician Assigned') {
+      if (!assigned_technician_id) {
+        return res.status(400).json({ error: 'Technician ID is required for assignment' });
+      }
+
+      // Verify technician exists
+      const tech = await db.get('SELECT id, name, email FROM users WHERE id = ?', assigned_technician_id);
+      if (!tech) {
+        return res.status(404).json({ error: 'Technician user not found' });
+      }
+
+      await db.run(
+        `UPDATE maintenance_requests 
+         SET status = 'Technician Assigned', assigned_technician_id = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        assigned_technician_id,
+        id
+      );
+
+      // Notify technician
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Task Assigned', ?, 'Task Assigned')`,
+        assigned_technician_id,
+        `You have been assigned to repair asset ${asset ? asset.name : ''} (${asset ? asset.asset_tag : ''}). Description: ${request.description}`
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Assign Technician', ?)`,
+        userId,
+        `Assigned technician ${tech.name} (ID: ${assigned_technician_id}) to maintenance request ${id}`
+      );
+
+    } else if (status === 'In Progress') {
+      await db.run(
+        `UPDATE maintenance_requests SET status = 'In Progress', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        id
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Start Repair', ?)`,
+        userId,
+        `Technician started repair work for request ${id}`
+      );
+
+    } else if (status === 'Resolved') {
+      if (!resolution_notes) {
+        return res.status(400).json({ error: 'Resolution notes are required to resolve a request' });
+      }
+
+      // Update request status to Resolved and set date
+      await db.run(
+        `UPDATE maintenance_requests 
+         SET status = 'Resolved', resolved_date = CURRENT_TIMESTAMP, resolution_notes = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        resolution_notes,
+        id
+      );
+
+      // Update asset status back to 'Available' and set condition if provided
+      const newCondition = condition || 'Good';
+      await db.run(
+        `UPDATE assets SET status = 'Available', condition = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        newCondition,
+        request.asset_id
+      );
+
+      // Notify requester
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Resolved', ?, 'Maintenance Resolved')`,
+        request.requested_by,
+        `The maintenance request for ${asset ? asset.name : ''} has been resolved: "${resolution_notes}"`
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Resolve Maintenance', ?)`,
+        userId,
+        `Resolved maintenance request ${id} for asset ID ${request.asset_id} with condition ${newCondition}`
+      );
+    }
 
     res.json({
-      message: 'Maintenance request is now in progress',
-      requestId: id,
-      status: 'In Progress'
+      message: `Maintenance request successfully transitioned to ${status}`
     });
-  } catch (error) {
-    next(error);
-  }
-});
 
-/**
- * @route POST /api/maintenance/:id/resolve
- * @desc Complete the repair work, mark request as 'Resolved', and transition the asset's status back to 'Available'
- */
-router.post('/:id/resolve', authenticateToken, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { resolution_notes, condition } = req.body;
-
-    const db = getDb();
-
-    const request = await db.get(
-      'SELECT mr.*, a.name as asset_name FROM maintenance_requests mr JOIN assets a ON mr.asset_id = a.id WHERE mr.id = ?',
-      id
-    );
-
-    if (!request) {
-      return res.status(404).json({ error: 'Maintenance request not found' });
-    }
-
-    if (request.status === 'Resolved') {
-      return res.status(400).json({ error: 'Maintenance request is already resolved' });
-    }
-
-    // Update request
-    await db.run(
-      `UPDATE maintenance_requests 
-       SET status = 'Resolved', resolved_date = NOW(), resolution_notes = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      resolution_notes || 'Resolved and verified',
-      id
-    );
-
-    // Revert asset status to 'Available' and optionally update its condition
-    const finalCondition = condition || 'Good';
-    await db.run(
-      `UPDATE assets 
-       SET status = 'Available', condition = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      finalCondition,
-      request.asset_id
-    );
-
-    // Log action
-    await db.run(
-      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Resolve Maintenance', ?)`,
-      req.user.id,
-      `Resolved maintenance request (ID: ${id}) for asset ${request.asset_name}. Condition: ${finalCondition}`
-    );
-
-    // Notify requester
-    await db.run(
-      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, 'Maintenance Resolved', ?, 'Maintenance Resolved')`,
-      request.requested_by,
-      `The maintenance request for ${request.asset_name} has been resolved successfully. Check-in notes: ${resolution_notes || 'None'}`
-    );
-
-    res.json({
-      message: 'Maintenance request resolved successfully',
-      requestId: id,
-      assetId: request.asset_id,
-      status: 'Resolved'
-    });
   } catch (error) {
     next(error);
   }

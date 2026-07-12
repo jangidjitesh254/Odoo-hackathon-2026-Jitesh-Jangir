@@ -198,171 +198,52 @@ router.get('/', authenticateToken, async (req, res, next) => {
 });
 
 /**
- * @route POST /api/bookings/:id/cancel
- * @desc Cancel an upcoming booking
+ * @route PUT /api/bookings/:id/cancel
+ * @desc Cancel a resource booking
  */
-router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
+router.put('/:id/cancel', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
     const db = getDb();
 
-    // Sync states first
-    await syncBookingStatesAndReminders(db);
-
-    const booking = await db.get(
-      `SELECT b.*, a.name as asset_name FROM bookings b JOIN assets a ON b.asset_id = a.id WHERE b.id = ?`,
-      id
-    );
-
+    // 1. Verify booking exists
+    const booking = await db.get('SELECT * FROM bookings WHERE id = ?', id);
     if (!booking) {
       return res.status(404).json({ error: 'Booking record not found' });
+    }
+
+    // 2. Permission check: Only creator, AssetManager, or Admin can cancel
+    if (booking.user_id !== req.user.id && !['AssetManager', 'Admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to cancel this booking' });
     }
 
     if (booking.status === 'Cancelled') {
       return res.status(400).json({ error: 'Booking is already cancelled' });
     }
 
-    if (booking.status === 'Completed') {
-      return res.status(400).json({ error: 'Cannot cancel a completed booking' });
-    }
-
-    // Cancel booking
+    // 3. Update status to Cancelled
     await db.run("UPDATE bookings SET status = 'Cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
+
+    // Get asset details for audit/notifications
+    const asset = await db.get('SELECT name FROM assets WHERE id = ?', booking.asset_id);
 
     // Log action
     await db.run(
       `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Cancel Booking', ?)`,
       req.user.id,
-      `Cancelled booking (ID: ${id}) for resource ${booking.asset_name}`
-    );
-
-    // Send notification
-    await db.run(
-      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
-      booking.user_id,
-      'Booking Cancelled',
-      `Your booking for ${booking.asset_name} scheduled for ${booking.start_time} has been cancelled.`,
-      'Booking Cancelled'
-    );
-
-    res.json({
-      message: 'Booking cancelled successfully',
-      bookingId: id,
-      status: 'Cancelled'
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @route PUT /api/bookings/:id
- * @desc Reschedule a booking with overlap check
- */
-router.put('/:id', authenticateToken, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { start_time, end_time } = req.body;
-
-    if (!start_time || !end_time) {
-      return res.status(400).json({ error: 'Rescheduled start time and end time are required' });
-    }
-
-    const startDt = new Date(start_time);
-    const endDt = new Date(end_time);
-
-    if (startDt >= endDt) {
-      return res.status(400).json({ error: 'Start time must be before end time' });
-    }
-
-    const db = getDb();
-
-    // Sync booking states
-    await syncBookingStatesAndReminders(db);
-
-    const booking = await db.get(
-      `SELECT b.*, a.name as asset_name FROM bookings b JOIN assets a ON b.asset_id = a.id WHERE b.id = ?`,
-      id
-    );
-
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking record not found' });
-    }
-
-    if (booking.status === 'Cancelled' || booking.status === 'Completed') {
-      return res.status(400).json({ error: `Cannot reschedule a ${booking.status} booking` });
-    }
-
-    // Overlap validation check (excluding current booking ID)
-    const overlappingBooking = await db.get(
-      `SELECT b.*, u.name as user_name 
-       FROM bookings b
-       JOIN users u ON b.user_id = u.id
-       WHERE b.asset_id = ? 
-         AND b.id != ?
-         AND b.status != 'Cancelled'
-         AND b.start_time < ? 
-         AND b.end_time > ?
-       LIMIT 1`,
-      booking.asset_id,
-      id,
-      endDt.toISOString(),
-      startDt.toISOString()
-    );
-
-    if (overlappingBooking) {
-      return res.status(400).json({
-        error: 'Overlap validation failed',
-        message: `This resource is already booked by ${overlappingBooking.user_name} from ${overlappingBooking.start_time} to ${overlappingBooking.end_time}.`
-      });
-    }
-
-    // Determine the new status (Upcoming or Ongoing)
-    const now = new Date();
-    let newStatus = 'Upcoming';
-    if (startDt <= now && endDt > now) {
-      newStatus = 'Ongoing';
-    } else if (endDt <= now) {
-      newStatus = 'Completed';
-    }
-
-    // Update times & status
-    await db.run(
-      `UPDATE bookings 
-       SET start_time = ?, end_time = ?, status = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      startDt.toISOString(),
-      endDt.toISOString(),
-      newStatus,
-      id
-    );
-
-    // Log action
-    await db.run(
-      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Reschedule Booking', ?)`,
-      req.user.id,
-      `Rescheduled booking (ID: ${id}) for ${booking.asset_name} to ${start_time} - ${end_time}`
+      `Cancelled booking ${id} for resource ${asset ? asset.name : ''}`
     );
 
     // Notify user
     await db.run(
       `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
       booking.user_id,
-      'Booking Rescheduled',
-      `Your booking for ${booking.asset_name} has been rescheduled to ${start_time} - ${end_time}.`,
-      'Booking Rescheduled'
+      'Booking Cancelled',
+      `Your booking for ${asset ? asset.name : ''} starting at ${booking.start_time} has been cancelled.`,
+      'Booking Cancelled'
     );
 
-    res.json({
-      message: 'Booking rescheduled successfully',
-      booking: {
-        id,
-        asset_id: booking.asset_id,
-        start_time: startDt.toISOString(),
-        end_time: endDt.toISOString(),
-        status: newStatus
-      }
-    });
+    res.json({ message: 'Booking successfully cancelled' });
   } catch (error) {
     next(error);
   }

@@ -1,67 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6C5CE7;
-  --color-primary-light: #EDEBFC;
-  --color-surface: #F7F7FB;
-  --color-success: #00B894;
-  --color-warning: #FDCB6E;
-  --color-danger: #FF6B6B;
+  /* Donezo HSL Themes for Tailwind v4 */
+  --color-primary: hsl(159, 85%, 15%);
+  --color-primary-hover: hsl(159, 80%, 20%);
+  --color-accent: hsl(148, 63%, 43%);
+  --color-accent-light: hsl(148, 60%, 93%);
+  --color-panel: #fafafa;
+  
+  --color-success-accent: hsl(148, 63%, 43%);
+  --color-success-accent-bg: hsl(148, 60%, 93%);
+  --color-warning-accent: hsl(38, 92%, 50%);
+  --color-warning-accent-bg: hsl(38, 92%, 93%);
+  --color-danger-accent: hsl(350, 89%, 60%);
+  --color-danger-accent-bg: hsl(350, 89%, 95%);
+  --color-info-accent: hsl(200, 95%, 50%);
+  --color-info-accent-bg: hsl(200, 95%, 93%);
 }
 
-body {
-  margin: 0;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@layer base {
+  body {
+    background-color: #ffffff;
+    color: #1a202c;
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }

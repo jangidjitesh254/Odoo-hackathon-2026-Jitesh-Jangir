@@ -1,24 +1,16 @@
 import React from 'react';
 
-/**
- * Main Layout for Authentication. Provides a split screen layout on desktop:
- * - Left side: Enterprise visual showcase with branding and system status widget.
- * - Right side: Dynamic form container.
- *
- * @param {Object} props
- * @param {React.ReactNode} props.children - Login or Signup form components
- */
 export default function AuthLayout({ children }) {
   return (
-    <div className="auth-body-wrapper">
-      <div className="auth-container">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-0 md:p-6 overflow-x-hidden font-sans">
+      <div className="w-full max-w-6xl h-full md:h-[680px] bg-slate-800 rounded-none md:rounded-2xl border-0 md:border border-slate-700/60 overflow-hidden flex flex-col md:flex-row shadow-2xl">
         
         {/* Left Column: Desktop Enterprise Showcase */}
-        <div className="auth-sidebar">
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-900 to-slate-950 p-10 flex-col justify-between border-r border-slate-700/40 relative">
+          
           {/* Header */}
-          <div className="sidebar-header">
-            <div className="sidebar-logo">
-              {/* AssetFlow Icon (Layered resource flow logo) */}
+          <div className="flex items-center gap-3">
+            <div className="text-emerald-500 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -35,52 +27,52 @@ export default function AuthLayout({ children }) {
                 <polyline points="2 12 12 17 22 12" />
               </svg>
             </div>
-            <span className="sidebar-brand-name">AssetFlow</span>
+            <span className="font-extrabold text-xl tracking-tight text-white">AssetFlow</span>
           </div>
 
           {/* Core Content */}
-          <div className="sidebar-content">
-            <div className="sidebar-tagline">
-              <h2>Smart Resource Orchestration</h2>
-              <p>
+          <div className="flex flex-col gap-8 my-auto text-left">
+            <div>
+              <h2 className="text-white text-3xl font-extrabold tracking-tight mb-3">Smart Resource Orchestration</h2>
+              <p className="text-slate-400 text-sm leading-relaxed">
                 Optimize asset utilization, automate maintenance tracking, and empower operations across your enterprise from a unified control center.
               </p>
             </div>
 
             {/* ERP Dashboard Preview Widget */}
-            <div className="dashboard-preview">
-              <div className="preview-title">
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 flex flex-col gap-4 backdrop-blur-md">
+              <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-400">
                 <span>System Analytics</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: '500' }}>
-                  <span className="pulse-indicator"></span>
-                  Active
+                <span className="flex items-center gap-1.5 text-[10px]">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                  <span className="text-emerald-400 font-bold uppercase">Active</span>
                 </span>
               </div>
               
-              <div className="preview-grid">
-                <div className="preview-card">
-                  <div className="preview-card-label">Total Assets</div>
-                  <div className="preview-card-value">1,482</div>
-                  <div className="preview-card-footer" style={{ color: 'var(--color-success)' }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3.5 text-left">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Assets</div>
+                  <div className="text-white text-lg font-extrabold mt-1">1,482</div>
+                  <div className="text-[10px] font-bold text-emerald-400 mt-0.5">
                     ↑ 12% this quarter
                   </div>
                 </div>
 
-                <div className="preview-card">
-                  <div className="preview-card-label">Active Deployments</div>
-                  <div className="preview-card-value">94.2%</div>
-                  <div className="preview-card-footer">
+                <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3.5 text-left">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Active Deployments</div>
+                  <div className="text-white text-lg font-extrabold mt-1">94.2%</div>
+                  <div className="text-[10px] font-bold text-slate-500 mt-0.5">
                     942 operations live
                   </div>
                 </div>
 
-                <div className="preview-card" style={{ gridColumn: 'span 2' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="preview-card-label">Resource Allocation Rate</div>
-                    <div className="preview-card-value" style={{ fontSize: '1.1rem' }}>88%</div>
+                <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3.5 text-left col-span-2">
+                  <div className="flex justify-between items-center">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Resource Allocation Rate</div>
+                    <div className="text-white text-sm font-extrabold">88%</div>
                   </div>
-                  <div className="utilization-bar-container">
-                    <div className="utilization-bar"></div>
+                  <div className="w-full h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full w-[88%]"></div>
                   </div>
                 </div>
               </div>
@@ -88,18 +80,18 @@ export default function AuthLayout({ children }) {
           </div>
 
           {/* Footer */}
-          <div className="sidebar-footer">
+          <div className="text-xs text-slate-500 text-left">
             <span>© {new Date().getFullYear()} AssetFlow Technologies Inc. All rights reserved.</span>
           </div>
         </div>
 
         {/* Right Column: Form Panel */}
-        <div className="auth-form-panel">
-          <div className="auth-form-card">
+        <div className="w-full md:w-1/2 bg-slate-950 flex items-center justify-center p-8 md:p-12">
+          <div className="w-full max-w-md flex flex-col gap-6">
             
             {/* Mobile Header (Hidden on Desktop) */}
-            <div className="mobile-logo-header">
-              <div className="mobile-logo">
+            <div className="flex md:hidden items-center gap-2.5 justify-center mb-6">
+              <div className="text-emerald-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -116,7 +108,7 @@ export default function AuthLayout({ children }) {
                   <polyline points="2 12 12 17 22 12" />
                 </svg>
               </div>
-              <span className="mobile-brand-name">AssetFlow</span>
+              <span className="font-extrabold text-xl text-white">AssetFlow</span>
             </div>
 
             {/* Injected Login or Signup Page Form Content */}
