@@ -14,7 +14,7 @@ export default function ResourceBooking() {
   const [showBookModal, setShowBookModal] = useState(false);
   const [selectedResourceId, setSelectedResourceId] = useState('');
   const [bookingForm, setBookingForm] = useState({ asset_id: '', start_time: '', end_time: '' });
-
+ 
   const loadData = async () => {
     try {
       setLoading(true);
