@@ -8,6 +8,9 @@ const { Pool } = pg;
 // Parse INT8 (PostgreSQL bigint) as numbers in JS instead of strings
 pg.types.setTypeParser(pg.types.builtins.INT8, (val) => parseInt(val, 10));
 
+// Return TIMESTAMP (without timezone) as string to prevent local timezone offset conversion
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (val) => val);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
