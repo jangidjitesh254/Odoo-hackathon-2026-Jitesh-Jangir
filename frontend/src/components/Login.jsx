@@ -130,6 +130,7 @@ export default function Login({ onNavigateToSignup }) {
           </label>
 
           
+          <a
             href="#forgot-password"
             className="text-emerald-600 hover:text-emerald-700 transition-colors"
             onClick={(e) => {
@@ -192,6 +193,7 @@ export default function Login({ onNavigateToSignup }) {
       <div className="text-center text-xs font-semibold text-slate-500 mt-6">
         Don't have an account?
         
+        <a
           href="#signup"
           className="text-emerald-600 hover:text-emerald-700 transition-colors font-bold ml-1"
           onClick={(e) => {
