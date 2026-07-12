@@ -33,18 +33,13 @@ async function runTests() {
     const db = await initDb();
 
     // Reset database state programmatically for clean test execution
-    console.log('Resetting database tables...');
-    await db.run('DELETE FROM audit_logs');
-    await db.run('DELETE FROM notifications');
-    await db.run('DELETE FROM maintenance_requests');
-    await db.run('DELETE FROM bookings');
-    await db.run('DELETE FROM transfers');
-    await db.run('DELETE FROM allocations');
-    await db.run('DELETE FROM assets');
-    await db.run('DELETE FROM users');
-    await db.run('DELETE FROM departments');
-    await db.run('DELETE FROM categories');
-    await db.run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'departments', 'categories', 'assets', 'allocations', 'transfers', 'bookings', 'maintenance_requests', 'notifications', 'audit_logs')");
+    console.log('Resetting database tables (PostgreSQL)...');
+    await db.exec(`
+      TRUNCATE TABLE 
+        audit_logs, notifications, maintenance_requests, bookings, transfers, 
+        allocations, assets, users, departments, categories 
+      RESTART IDENTITY CASCADE
+    `);
 
     // Seed: 1 Admin and 1 Employee
     console.log('Seeding initial test users...');

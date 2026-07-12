@@ -40,18 +40,12 @@ async function runTests() {
 
     // Reset and seed database programmatically for clean test execution
     console.log('Resetting and seeding database for clean integration test...');
-    await db.run('DELETE FROM audit_logs');
-    await db.run('DELETE FROM notifications');
-    await db.run('DELETE FROM maintenance_requests');
-    await db.run('DELETE FROM bookings');
-    await db.run('DELETE FROM transfers');
-    await db.run('DELETE FROM allocations');
-    await db.run('DELETE FROM assets');
-    await db.run('DELETE FROM users');
-    await db.run('DELETE FROM departments');
-    await db.run('DELETE FROM categories');
-
-    await db.run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'departments', 'categories', 'assets', 'allocations', 'transfers', 'bookings', 'maintenance_requests', 'notifications', 'audit_logs')");
+    await db.exec(`
+      TRUNCATE TABLE 
+        audit_logs, notifications, maintenance_requests, bookings, transfers, 
+        allocations, assets, users, departments, categories 
+      RESTART IDENTITY CASCADE
+    `);
 
     const itDeptResult = await db.run(`INSERT INTO departments (name, status) VALUES ('IT Department', 'Active')`);
     const itDeptId = itDeptResult.lastID;
@@ -83,9 +77,9 @@ async function runTests() {
     const furnitureResult = await db.run(`INSERT INTO categories (name, custom_fields) VALUES ('Furniture', '{"material": "Wood"}')`);
     const furnitureId = furnitureResult.lastID;
 
-    const lenovoResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) VALUES (?, ?, ?, ?, date('now', '-1 year'), 1200.0, 'Good', 'IT Office Room 101', 'Allocated')`, 'Lenovo ThinkPad X1 Carbon', electronicsId, 'AF-0001', 'SN-LENOVO12345');
+    const lenovoResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) VALUES (?, ?, ?, ?, CURRENT_DATE - INTERVAL '1 year', 1200.0, 'Good', 'IT Office Room 101', 'Allocated')`, 'Lenovo ThinkPad X1 Carbon', electronicsId, 'AF-0001', 'SN-LENOVO12345');
     const lenovoId = lenovoResult.lastID;
-    const dellResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) VALUES (?, ?, ?, ?, date('now', '-6 months'), 1000.0, 'Good', 'IT Storage Locker', 'Available')`, 'Dell Latitude 5420', electronicsId, 'AF-0002', 'SN-DELL67890');
+    const dellResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) VALUES (?, ?, ?, ?, CURRENT_DATE - INTERVAL '6 months', 1000.0, 'Good', 'IT Storage Locker', 'Available')`, 'Dell Latitude 5420', electronicsId, 'AF-0002', 'SN-DELL67890');
     const dellId = dellResult.lastID;
     const confRoomResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, condition, location, is_bookable, status) VALUES (?, ?, ?, 'New', 'HQ 2nd Floor Room A', 1, 'Available')`, 'Conference Room A', roomsId, 'AF-0003');
     const confRoomId = confRoomResult.lastID;
@@ -94,11 +88,11 @@ async function runTests() {
     const chairResult = await db.run(`INSERT INTO assets (name, category_id, asset_tag, condition, location, status) VALUES (?, ?, ?, 'Good', 'HR Office Cubicle 3', 'Allocated')`, 'Ergonomic Office Chair', furnitureId, 'AF-0005');
     const chairId = chairResult.lastID;
 
-    await db.run(`INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) VALUES (?, ?, ?, datetime('now', '-15 days'), datetime('now', '-5 days'), 'Active')`, lenovoId, priyaId, managerId);
-    await db.run(`INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) VALUES (?, ?, ?, datetime('now', '-2 days'), datetime('now', '+3 days'), 'Active')`, chairId, priyaId, managerId);
+    await db.run(`INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) VALUES (?, ?, ?, NOW() - INTERVAL '15 days', NOW() - INTERVAL '5 days', 'Active')`, lenovoId, priyaId, managerId);
+    await db.run(`INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) VALUES (?, ?, ?, NOW() - INTERVAL '2 days', NOW() + INTERVAL '3 days', 'Active')`, chairId, priyaId, managerId);
 
-    await db.run(`INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) VALUES (?, ?, datetime('now', '-30 minutes'), datetime('now', '+90 minutes'), 'Ongoing')`, confRoomId, priyaId);
-    await db.run(`INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) VALUES (?, ?, datetime('now', '+2 hours'), datetime('now', '+5 hours'), 'Upcoming')`, teslaId, headId);
+    await db.run(`INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) VALUES (?, ?, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'Ongoing')`, confRoomId, priyaId);
+    await db.run(`INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) VALUES (?, ?, NOW() + INTERVAL '2 hours', NOW() + INTERVAL '5 hours', 'Upcoming')`, teslaId, headId);
 
     await db.run(`INSERT INTO maintenance_requests (asset_id, requested_by, description, priority, status) VALUES (?, ?, 'Squeaky brakes and minor alignment check', 'High', 'In Progress')`, teslaId, priyaId);
     await db.run(`INSERT INTO transfers (asset_id, from_user_id, to_department_id, requested_by, status, remarks) VALUES (?, ?, ?, ?, 'Pending', 'Request transfer to HR department for onboarding new recruiter')`, lenovoId, priyaId, hrDeptId, priyaId);
