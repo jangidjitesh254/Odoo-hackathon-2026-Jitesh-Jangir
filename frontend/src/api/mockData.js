@@ -103,3 +103,41 @@ export let allocations = [
 export const transferRequests = [
   // { id, assetId, fromHolder, toHolder, status: "Requested" | "Approved" | "Re-allocated" }
 ];
+
+export const resources = [
+  { id: 1, name: "Conference Room B2", type: "Room" },
+  { id: 2, name: "Company Vehicle - Swift Dzire", type: "Vehicle" },
+  { id: 3, name: "Projector Epson X200", type: "Equipment" },
+];
+
+export let bookings = [
+  {
+    id: 1,
+    resourceId: 1,
+    resourceName: "Conference Room B2",
+    bookedBy: "Priya Sharma",
+    date: new Date().toISOString().split("T")[0],
+    startTime: "09:00",
+    endTime: "10:00",
+    status: "Active",
+  },
+];
+
+export const notifications = [
+  { id: 1, type: "Overdue Return Alert", message: "Laptop AF-0001 is overdue for return by Priya Sharma", time: "2026-07-12 09:15", read: false, severity: "danger" },
+  { id: 2, type: "Booking Confirmed", message: "Conference Room B2 booked 9:00–10:00 today", time: "2026-07-12 08:40", read: false, severity: "success" },
+  { id: 3, type: "Maintenance Approved", message: "Maintenance approved for Projector Epson X200", time: "2026-07-11 17:20", read: true, severity: "primary" },
+  { id: 4, type: "Transfer Approved", message: "Dell Laptop 14 transferred to Rahul Verma", time: "2026-07-11 14:05", read: true, severity: "primary" },
+  { id: 5, type: "Audit Discrepancy Flagged", message: "Projector AF-0003 marked Damaged during Q3 Audit Cycle", time: "2026-07-10 11:30", read: true, severity: "warning" },
+  { id: 6, type: "Booking Reminder", message: "Your booking for Swift Dzire starts in 30 minutes", time: "2026-07-10 08:30", read: true, severity: "primary" },
+];
+
+export const activityLogs = [
+  { id: 1, actor: "Priya Sharma", action: "Requested transfer", target: "Dell Laptop 14 (AF-0001)", time: "2026-07-12 09:20" },
+  { id: 2, actor: "Admin", action: "Promoted employee to Asset Manager", target: "Amit Kumar", time: "2026-07-12 09:05" },
+  { id: 3, actor: "Rahul Verma", action: "Booked resource", target: "Conference Room B2 (9:00–10:00)", time: "2026-07-12 08:40" },
+  { id: 4, actor: "Asset Manager", action: "Approved maintenance request", target: "Projector Epson X200 (AF-0003)", time: "2026-07-11 17:20" },
+  { id: 5, actor: "Asset Manager", action: "Approved transfer", target: "Dell Laptop 14 (AF-0001) → Rahul Verma", time: "2026-07-11 14:05" },
+  { id: 6, actor: "Auditor - Amit Kumar", action: "Flagged discrepancy", target: "Projector AF-0003 - Damaged", time: "2026-07-10 11:30" },
+  { id: 7, actor: "Admin", action: "Created department", target: "IT Support", time: "2026-07-09 10:00" },
+];
