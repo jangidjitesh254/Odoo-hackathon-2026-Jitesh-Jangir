@@ -15,6 +15,40 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const db = getDb();
+
+    // Auto-flag overdue returns: Find all active, overdue allocations, and auto-generate alerts
+    const overdueAllocations = await db.all(
+      `SELECT al.id, al.user_id, al.expected_return_date, a.name as asset_name 
+       FROM allocations al 
+       JOIN assets a ON al.asset_id = a.id 
+       WHERE al.status = 'Active' 
+         AND al.returned_date IS NULL 
+         AND al.user_id IS NOT NULL 
+         AND al.expected_return_date < NOW()`
+    );
+
+    for (const alloc of overdueAllocations) {
+      // Check if an overdue return notification already exists for this user/allocation
+      const existingNotify = await db.get(
+        `SELECT id FROM notifications 
+         WHERE user_id = ? AND type = 'Overdue Return Alert' AND message LIKE ? 
+         LIMIT 1`,
+        alloc.user_id,
+        `%${alloc.asset_name}%`
+      );
+
+      if (!existingNotify) {
+        const dateStr = new Date(alloc.expected_return_date).toLocaleDateString();
+        await db.run(
+          `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+          alloc.user_id,
+          'Overdue Return Alert',
+          `Alert: Your allocated asset ${alloc.asset_name} was expected to be returned by ${dateStr} and is now overdue.`,
+          'Overdue Return Alert'
+        );
+      }
+    }
+
     const userId = req.user.id;
     const role = req.user.role;
 
