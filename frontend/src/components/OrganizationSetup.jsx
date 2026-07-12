@@ -56,7 +56,6 @@ export default function OrganizationSetup() {
         setSuccess('Department created successfully');
       }
       setShowDeptModal(false);
-      // Reload users to capture any automatic role updates
       const usersData = await api.get('/users');
       setUsers(usersData.users || []);
     } catch (err) {
@@ -151,70 +150,86 @@ export default function OrganizationSetup() {
   };
 
   if (loading) {
-    return <div className="text-muted">Loading system master data...</div>;
+    return <div className="text-slate-400 text-sm font-semibold text-left">Loading system master data...</div>;
   }
 
   return (
     <div>
       {/* Sub tabs header */}
-      <div className="tabs-header">
+      <div className="flex border-b border-slate-200 mb-6 gap-2 text-left">
         <button
-          className={`tab-btn ${activeSubTab === 'departments' ? 'active' : ''}`}
+          className={`py-3 px-5 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-all cursor-pointer hover:text-slate-900 hover:border-slate-300 ${
+            activeSubTab === 'departments' ? 'text-accent border-b-accent hover:text-accent hover:border-b-accent' : ''
+          }`}
           onClick={() => setActiveSubTab('departments')}
         >
           Departments
         </button>
         <button
-          className={`tab-btn ${activeSubTab === 'categories' ? 'active' : ''}`}
+          className={`py-3 px-5 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-all cursor-pointer hover:text-slate-900 hover:border-slate-300 ${
+            activeSubTab === 'categories' ? 'text-accent border-b-accent hover:text-accent hover:border-b-accent' : ''
+          }`}
           onClick={() => setActiveSubTab('categories')}
         >
           Asset Categories
         </button>
         <button
-          className={`tab-btn ${activeSubTab === 'employees' ? 'active' : ''}`}
+          className={`py-3 px-5 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-all cursor-pointer hover:text-slate-900 hover:border-slate-300 ${
+            activeSubTab === 'employees' ? 'text-accent border-b-accent hover:text-accent hover:border-b-accent' : ''
+          }`}
           onClick={() => setActiveSubTab('employees')}
         >
           Employee Directory
         </button>
       </div>
 
-      {error && <div className="form-alert form-alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
-      {success && <div className="form-alert form-alert-success" style={{ marginBottom: '1.5rem' }}>{success}</div>}
+      {error && (
+        <div className="flex items-center gap-2 bg-red-950/40 border border-red-800/60 text-red-200 rounded-lg p-3.5 text-xs text-left mb-6">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 rounded-lg p-3.5 text-xs text-left mb-6">
+          {success}
+        </div>
+      )}
 
       {/* Tab A: Departments */}
       {activeSubTab === 'departments' && (
-        <div className="section-card">
-          <div className="section-header">
-            <h3>Department Management</h3>
-            <button className="action-btn" onClick={openCreateDept}>+ Add Department</button>
+        <div className="bg-panel border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 text-left">
+          <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+            <h3 className="m-0 text-slate-900 font-extrabold text-sm uppercase tracking-wider">Department Management</h3>
+            <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-xl py-2.5 px-4 text-xs flex items-center gap-2 cursor-pointer shadow-sm transition-colors" onClick={openCreateDept}>+ Add Department</button>
           </div>
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="w-full overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th>Department Name</th>
-                  <th>Department Head</th>
-                  <th>Parent Department</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Department Name</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Department Head</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Parent Department</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Status</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {departments.length === 0 ? (
-                  <tr><td colSpan="5" className="text-muted text-center">No departments registered.</td></tr>
+                  <tr><td colSpan="5" className="py-8 text-slate-400 text-xs font-bold text-center">No departments registered.</td></tr>
                 ) : (
                   departments.map(dept => (
                     <tr key={dept.id}>
-                      <td className="font-semibold">{dept.name}</td>
-                      <td>{dept.head_name || <span className="text-muted">None assigned</span>}</td>
-                      <td>{dept.parent_name || <span className="text-muted">Root</span>}</td>
-                      <td>
-                        <span className={`badge ${dept.status === 'Active' ? 'badge-available' : 'badge-retired'}`}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-bold text-slate-900">{dept.name}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{dept.head_name || <span className="text-slate-400 font-bold italic">None assigned</span>}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{dept.parent_name || <span className="text-slate-400 font-bold">Root</span>}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <span className={`text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase border ${
+                          dept.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 'bg-slate-100 text-slate-500 border-slate-200/50'
+                        }`}>
                           {dept.status}
                         </span>
                       </td>
-                      <td>
-                        <button className="logout-btn" style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => openEditDept(dept)}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <button className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-lg py-1 px-3 text-[10px] cursor-pointer transition-colors" onClick={() => openEditDept(dept)}>
                           Edit
                         </button>
                       </td>
@@ -229,34 +244,34 @@ export default function OrganizationSetup() {
 
       {/* Tab B: Asset Categories */}
       {activeSubTab === 'categories' && (
-        <div className="section-card">
-          <div className="section-header">
-            <h3>Asset Category Configurations</h3>
-            <button className="action-btn" onClick={openCreateCat}>+ Add Category</button>
+        <div className="bg-panel border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 text-left">
+          <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+            <h3 className="m-0 text-slate-900 font-extrabold text-sm uppercase tracking-wider">Asset Category Configurations</h3>
+            <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-xl py-2.5 px-4 text-xs flex items-center gap-2 cursor-pointer shadow-sm transition-colors" onClick={openCreateCat}>+ Add Category</button>
           </div>
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="w-full overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th>Category Name</th>
-                  <th>Custom Field Schema</th>
-                  <th>Actions</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Category Name</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Custom Field Schema</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.length === 0 ? (
-                  <tr><td colSpan="3" className="text-muted text-center">No categories registered.</td></tr>
+                  <tr><td colSpan="3" className="py-8 text-slate-400 text-xs font-bold text-center">No categories registered.</td></tr>
                 ) : (
                   categories.map(cat => (
                     <tr key={cat.id}>
-                      <td className="font-semibold">{cat.name}</td>
-                      <td>
-                        <pre style={{ margin: 0, fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-bold text-slate-900">{cat.name}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <pre className="margin-0 text-[11px] bg-slate-900 text-emerald-400 p-2.5 rounded-lg font-mono text-left max-w-xs overflow-x-auto">
                           {JSON.stringify(cat.custom_fields, null, 2)}
                         </pre>
                       </td>
-                      <td>
-                        <button className="logout-btn" style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => openEditCat(cat)}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <button className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-lg py-1 px-3 text-[10px] cursor-pointer transition-colors" onClick={() => openEditCat(cat)}>
                           Edit
                         </button>
                       </td>
@@ -271,35 +286,34 @@ export default function OrganizationSetup() {
 
       {/* Tab C: Employee Directory */}
       {activeSubTab === 'employees' && (
-        <div className="section-card">
-          <div className="section-header">
-            <h3>Employee Directory Roles & Status</h3>
+        <div className="bg-panel border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 text-left">
+          <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+            <h3 className="m-0 text-slate-900 font-extrabold text-sm uppercase tracking-wider">Employee Directory Roles & Status</h3>
           </div>
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="w-full overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Department</th>
-                  <th>System Role</th>
-                  <th>Account Status</th>
-                  <th>Toggle Status</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Name</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Email</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Department</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">System Role</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Account Status</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Toggle Status</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
-                  <tr><td colSpan="6" className="text-muted text-center">No users registered.</td></tr>
+                  <tr><td colSpan="6" className="py-8 text-slate-400 text-xs font-bold text-center">No users registered.</td></tr>
                 ) : (
                   users.map(emp => (
                     <tr key={emp.id}>
-                      <td className="font-semibold">{emp.name}</td>
-                      <td>{emp.email}</td>
-                      <td>{emp.department_name || <span className="text-muted">None</span>}</td>
-                      <td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-bold text-slate-900">{emp.name}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{emp.email}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{emp.department_name || <span className="text-slate-400 font-bold">None</span>}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
                         <select
-                          className="form-control"
-                          style={{ padding: '0.2rem', width: '150px' }}
+                          className="w-[150px] bg-white border border-slate-200 text-slate-900 rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-accent"
                           value={emp.role}
                           onChange={(e) => handleUserRoleChange(emp.id, e.target.value)}
                         >
@@ -309,19 +323,20 @@ export default function OrganizationSetup() {
                           <option value="Admin">Admin</option>
                         </select>
                       </td>
-                      <td>
-                        <span className={`badge ${emp.status === 'Active' ? 'badge-available' : 'badge-lost'}`}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <span className={`text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase border ${
+                          emp.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 'bg-red-50 text-red-600 border-red-200/50'
+                        }`}>
                           {emp.status}
                         </span>
                       </td>
-                      <td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
                         <button
-                          className="logout-btn"
-                          style={{
-                            borderColor: emp.status === 'Active' ? 'var(--danger)' : 'var(--success)',
-                            color: emp.status === 'Active' ? 'var(--danger)' : 'var(--success)',
-                            background: emp.status === 'Active' ? 'var(--danger-bg)' : 'var(--success-bg)'
-                          }}
+                          className={`font-bold rounded-lg py-1 px-3 text-[10px] border cursor-pointer transition-colors ${
+                            emp.status === 'Active' 
+                              ? 'border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50' 
+                              : 'border-emerald-200 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50'
+                          }`}
                           onClick={() => handleUserStatusChange(emp.id, emp.status)}
                         >
                           {emp.status === 'Active' ? 'Deactivate' : 'Activate'}
@@ -338,28 +353,28 @@ export default function OrganizationSetup() {
 
       {/* Department Modal */}
       {showDeptModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>{editingDept ? 'Edit Department' : 'Create Department'}</h3>
-              <button className="modal-close-btn" onClick={() => setShowDeptModal(false)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-wider">{editingDept ? 'Edit Department' : 'Create Department'}</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setShowDeptModal(false)}>&times;</button>
             </div>
             <form onSubmit={handleDeptSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Department Name</label>
+              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Department Name</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm transition-all focus:outline-none focus:border-accent"
                     required
                     value={deptForm.name}
                     onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Assign Department Head (Select from Directory)</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Assign Department Head (Select from Directory)</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={deptForm.head_id}
                     onChange={(e) => setDeptForm({ ...deptForm, head_id: e.target.value })}
                   >
@@ -369,10 +384,10 @@ export default function OrganizationSetup() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Parent Department (Hierarchy)</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Parent Department (Hierarchy)</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={deptForm.parent_id}
                     onChange={(e) => setDeptForm({ ...deptForm, parent_id: e.target.value })}
                   >
@@ -382,10 +397,10 @@ export default function OrganizationSetup() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Status</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Status</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={deptForm.status}
                     onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
                   >
@@ -394,9 +409,9 @@ export default function OrganizationSetup() {
                   </select>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="action-btn secondary" onClick={() => setShowDeptModal(false)}>Cancel</button>
-                <button type="submit" className="action-btn">Save</button>
+              <div className="flex justify-end gap-3 px-6 py-4.5 border-t border-slate-100 bg-slate-50">
+                <button type="button" className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-xl py-2.5 px-4 text-xs cursor-pointer" onClick={() => setShowDeptModal(false)}>Cancel</button>
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-xl py-2.5 px-4 text-xs cursor-pointer">Save</button>
               </div>
             </form>
           </div>
@@ -405,38 +420,37 @@ export default function OrganizationSetup() {
 
       {/* Category Modal */}
       {showCatModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>{editingCat ? 'Edit Category' : 'Create Category'}</h3>
-              <button className="modal-close-btn" onClick={() => setShowCatModal(false)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-wider">{editingCat ? 'Edit Category' : 'Create Category'}</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setShowCatModal(false)}>&times;</button>
             </div>
             <form onSubmit={handleCatSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Category Name</label>
+              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Category Name</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm transition-all focus:outline-none focus:border-accent"
                     required
                     value={catForm.name}
                     onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Custom Fields JSON Scheme (e.g. warranty: 24, size: "15inch")</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Custom Fields JSON Scheme (e.g. warranty: 24, size: "15inch")</label>
                   <textarea
-                    className="form-control"
-                    style={{ fontFamily: 'monospace', height: '120px' }}
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm font-mono focus:outline-none focus:border-accent h-[120px]"
                     required
                     value={catForm.custom_fields}
                     onChange={(e) => setCatForm({ ...catForm, custom_fields: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="action-btn secondary" onClick={() => setShowCatModal(false)}>Cancel</button>
-                <button type="submit" className="action-btn">Save</button>
+              <div className="flex justify-end gap-3 px-6 py-4.5 border-t border-slate-100 bg-slate-50">
+                <button type="button" className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-xl py-2.5 px-4 text-xs cursor-pointer" onClick={() => setShowCatModal(false)}>Cancel</button>
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-xl py-2.5 px-4 text-xs cursor-pointer">Save</button>
               </div>
             </form>
           </div>

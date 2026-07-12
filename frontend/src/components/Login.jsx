@@ -2,14 +2,6 @@ import { useState } from 'react';
 import InputField from './common/InputField';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Login Component for AssetFlow.
- * Includes email, password (show/hide), remember me, forgot password link,
- * and navigation links.
- *
- * @param {Object} props
- * @param {function} props.onNavigateToSignup - Callback to navigate to Signup page
- */
 export default function Login({ onNavigateToSignup }) {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
@@ -28,13 +20,12 @@ export default function Login({ onNavigateToSignup }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-    // Clear errors when user types
     if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError('Please fill in all required fields.');
       return;
@@ -56,13 +47,13 @@ export default function Login({ onNavigateToSignup }) {
 
   return (
     <>
-      <div className="auth-header">
-        <h1>Welcome Back</h1>
-        <p>Please enter your credentials to access your account</p>
+      <div className="text-center mb-6">
+        <h1 className="text-slate-900 text-2xl font-bold tracking-tight mb-1.5">Welcome Back</h1>
+        <p className="text-slate-400 text-sm">Please enter your credentials to access your account</p>
       </div>
 
       {error && (
-        <div className="form-alert form-alert-error">
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200/50 text-red-600 rounded-xl p-3.5 text-xs font-bold text-left mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -83,7 +74,7 @@ export default function Login({ onNavigateToSignup }) {
       )}
 
       {success && (
-        <div className="form-alert form-alert-success">
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/50 text-emerald-600 rounded-xl p-3.5 text-xs font-bold text-left mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -102,7 +93,7 @@ export default function Login({ onNavigateToSignup }) {
         </div>
       )}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         {/* Email Field */}
         <InputField
           label="Email Address"
@@ -126,21 +117,21 @@ export default function Login({ onNavigateToSignup }) {
         />
 
         {/* Actions row: Remember Me & Forgot Password */}
-        <div className="form-actions-row">
-          <label className="checkbox-container">
+        <div className="flex items-center justify-between mt-1 mb-4 text-xs font-semibold">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               name="rememberMe"
               checked={formData.rememberMe}
               onChange={handleChange}
-              className="checkbox-input"
+              className="w-4 h-4 accent-primary border border-slate-300 rounded cursor-pointer"
             />
-            <span className="checkbox-label">Remember me</span>
+            <span className="text-slate-600">Remember me</span>
           </label>
 
-          <a
+          
             href="#forgot-password"
-            className="forgot-password-link"
+            className="text-emerald-600 hover:text-emerald-700 transition-colors"
             onClick={(e) => {
               e.preventDefault();
               setError('Password reset link has been requested (Simulated).');
@@ -151,7 +142,11 @@ export default function Login({ onNavigateToSignup }) {
         </div>
 
         {/* Login Button */}
-        <button type="submit" className="submit-btn" disabled={loading}>
+        <button
+          type="submit"
+          className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-full flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <svg
@@ -184,8 +179,7 @@ export default function Login({ onNavigateToSignup }) {
             'Sign In'
           )}
         </button>
-        
-        {/* Style keyframe injecting dynamically for loader spinner */}
+
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes spin {
             from { transform: rotate(0deg); }
@@ -195,11 +189,11 @@ export default function Login({ onNavigateToSignup }) {
       </form>
 
       {/* Switch Footer Link */}
-      <div className="auth-switch-footer">
+      <div className="text-center text-xs font-semibold text-slate-500 mt-6">
         Don't have an account?
-        <a
+        
           href="#signup"
-          className="auth-switch-link"
+          className="text-emerald-600 hover:text-emerald-700 transition-colors font-bold ml-1"
           onClick={(e) => {
             e.preventDefault();
             onNavigateToSignup();

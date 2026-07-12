@@ -14,7 +14,7 @@ export default function MaintenanceManagement() {
   // Modals state
   const [showRaiseModal, setShowRaiseModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
-  
+
   // Selected state
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [assignTechId, setAssignTechId] = useState({});
@@ -103,68 +103,75 @@ export default function MaintenanceManagement() {
   return (
     <div>
       {/* Raise button */}
-      <div className="quick-actions-row">
-        <button className="action-btn" onClick={() => setShowRaiseModal(true)}>
+      <div className="flex gap-3 mb-6 justify-start">
+        <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-full py-3 px-6 text-sm flex items-center gap-2 cursor-pointer shadow-sm transition-colors" onClick={() => setShowRaiseModal(true)}>
           + Raise Maintenance Request
         </button>
       </div>
 
-      {error && <div className="form-alert form-alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
-      {success && <div className="form-alert form-alert-success" style={{ marginBottom: '1.5rem' }}>{success}</div>}
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200/50 text-red-600 rounded-xl p-3.5 text-xs font-bold text-left mb-6">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/50 text-emerald-600 rounded-xl p-3.5 text-xs font-bold text-left mb-6">
+          {success}
+        </div>
+      )}
 
       {/* Requests table listing */}
-      <div className="section-card">
-        <div className="section-header">
-          <h3>Maintenance Flow Logs</h3>
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 text-left">
+        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+          <h3 className="m-0 text-slate-900 font-bold text-base capitalize tracking-wider">Maintenance Flow Logs</h3>
         </div>
         {loading ? (
-          <div className="text-muted">Loading maintenance flow...</div>
+          <div className="text-slate-400 text-sm font-semibold py-4">Loading maintenance flow...</div>
         ) : (
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="w-full overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th>Request ID</th>
-                  <th>Asset</th>
-                  <th>Tag</th>
-                  <th>Requester</th>
-                  <th>Problem Details</th>
-                  <th>Priority</th>
-                  <th>Assigned Tech</th>
-                  <th>Work Status</th>
-                  <th>Actions Workflow</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Request ID</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Asset</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Tag</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Requester</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Problem Details</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Priority</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Assigned Tech</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Work Status</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Actions Workflow</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.length === 0 ? (
-                  <tr><td colSpan="9" className="text-muted text-center">No maintenance logs matching access rights.</td></tr>
+                  <tr><td colSpan="9" className="py-8 text-slate-400 text-xs font-bold text-center">No maintenance logs matching access rights.</td></tr>
                 ) : (
                   requests.map(req => {
                     const isAssignedTech = req.assigned_technician_id === user.id;
                     const canResolve = isAssignedTech || isManager;
                     return (
                       <tr key={req.id}>
-                        <td>MR-{String(req.id).padStart(4, '0')}</td>
-                        <td className="font-semibold">{req.asset_name}</td>
-                        <td className="text-info">{req.asset_tag}</td>
-                        <td>{req.requester_name}</td>
-                        <td>{req.description}</td>
-                        <td>
-                          <span className={`badge ${
-                            req.priority === 'Critical' ? 'badge-lost' :
-                            req.priority === 'High' ? 'badge-reserved' : 'badge-allocated'
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-semibold text-slate-500">MR-{String(req.id).padStart(4, '0')}</td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-bold text-slate-900">{req.asset_name}</td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-semibold text-emerald-600">{req.asset_tag}</td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{req.requester_name}</td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{req.description}</td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                          <span className={`text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase border ${
+                            req.priority === 'Critical' ? 'bg-red-50 text-red-600 border-red-200/50' :
+                            req.priority === 'High' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : 'bg-blue-50 text-blue-600 border-blue-200/50'
                           }`}>
                             {req.priority}
                           </span>
                         </td>
-                        <td>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
                           {req.technician_name ? (
                             req.technician_name
                           ) : isManager && req.status === 'Approved' ? (
-                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <div className="flex gap-2">
                               <select
-                                className="form-control"
-                                style={{ padding: '0.2rem', width: '130px', fontSize: '0.8rem' }}
+                                className="bg-white border border-slate-200 text-slate-900 rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-accent w-[130px]"
                                 value={assignTechId[req.id] || ''}
                                 onChange={(e) => setAssignTechId({ ...assignTechId, [req.id]: e.target.value })}
                               >
@@ -174,48 +181,46 @@ export default function MaintenanceManagement() {
                                 ))}
                               </select>
                               <button
-                                className="action-btn"
-                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem' }}
+                                className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-lg py-1 px-2 text-[10px] cursor-pointer transition-colors"
                                 onClick={() => handleStatusChange(req.id, 'Technician Assigned', { assigned_technician_id: assignTechId[req.id] })}
                               >
                                 Assign
                               </button>
                             </div>
                           ) : (
-                            <span className="text-muted">Unassigned</span>
+                            <span className="text-slate-400 font-bold italic text-xs">Unassigned</span>
                           )}
                         </td>
-                        <td>
-                          <span className={`badge ${
-                            req.status === 'Resolved' ? 'badge-available' :
-                            req.status === 'Pending' ? 'badge-reserved' : 'badge-allocated'
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                          <span className={`text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase border ${
+                            req.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' :
+                            req.status === 'Pending' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : 'bg-blue-50 text-blue-600 border-blue-200/50'
                           }`}>
                             {req.status}
                           </span>
                         </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                          <div className="flex gap-2 flex-wrap">
                             {isManager && req.status === 'Pending' && (
                               <>
-                                <button className="action-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => handleStatusChange(req.id, 'Approved')}>
+                                <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-lg py-1 px-2 text-[10px] cursor-pointer transition-colors" onClick={() => handleStatusChange(req.id, 'Approved')}>
                                   Approve
                                 </button>
-                                <button className="logout-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => handleStatusChange(req.id, 'Rejected')}>
+                                <button className="bg-white hover:bg-slate-50 border border-slate-200 text-red-600 font-bold rounded-lg py-1 px-2 text-[10px] cursor-pointer transition-colors" onClick={() => handleStatusChange(req.id, 'Rejected')}>
                                   Reject
                                 </button>
                               </>
                             )}
 
                             {req.status === 'Technician Assigned' && canResolve && (
-                              <button className="action-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: 'var(--info)' }} onClick={() => handleStatusChange(req.id, 'In Progress')}>
+                              <button className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 font-bold rounded-lg py-1 px-2.5 text-[10px] cursor-pointer transition-colors" onClick={() => handleStatusChange(req.id, 'In Progress')}>
                                 Start Repair
                               </button>
                             )}
 
                             {req.status === 'In Progress' && canResolve && (
                               <button
-                                className="action-btn"
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: 'var(--success)' }}
+                                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 font-bold rounded-lg py-1 px-2.5 text-[10px] cursor-pointer transition-colors"
                                 onClick={() => {
                                   setSelectedRequest(req);
                                   setShowResolveModal(true);
@@ -226,7 +231,7 @@ export default function MaintenanceManagement() {
                             )}
 
                             {['Resolved', 'Rejected'].includes(req.status) && (
-                              <span className="text-muted" style={{ fontSize: '0.85rem' }}>Completed</span>
+                              <span className="text-slate-400 text-xs font-bold">Completed</span>
                             )}
                           </div>
                         </td>
@@ -242,18 +247,18 @@ export default function MaintenanceManagement() {
 
       {/* Raise Request Modal */}
       {showRaiseModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Raise Maintenance Request</h3>
-              <button className="modal-close-btn" onClick={() => setShowRaiseModal(false)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-bold text-base capitalize tracking-wider">Raise Maintenance Request</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setShowRaiseModal(false)}>&times;</button>
             </div>
             <form onSubmit={handleRaiseSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Select Asset</label>
+              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Select Asset</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     required
                     value={raiseForm.asset_id}
                     onChange={(e) => setRaiseForm({ ...raiseForm, asset_id: e.target.value })}
@@ -265,10 +270,10 @@ export default function MaintenanceManagement() {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Priority Level</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Priority Level</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={raiseForm.priority}
                     onChange={(e) => setRaiseForm({ ...raiseForm, priority: e.target.value })}
                   >
@@ -279,30 +284,30 @@ export default function MaintenanceManagement() {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Issue Description</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Issue Description</label>
                   <textarea
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent h-[100px]"
                     required
                     value={raiseForm.description}
                     onChange={(e) => setRaiseForm({ ...raiseForm, description: e.target.value })}
-                    placeholder="Provide details about the defect, squeaking,sticky keys, error messages, etc."
+                    placeholder="Provide details about the defect, squeaking, sticky keys, error messages, etc."
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Photo URL (Optional)</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Photo URL (Optional)</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={raiseForm.photo_url}
                     onChange={(e) => setRaiseForm({ ...raiseForm, photo_url: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="action-btn secondary" onClick={() => setShowRaiseModal(false)}>Cancel</button>
-                <button type="submit" className="action-btn">Submit Request</button>
+              <div className="flex justify-end gap-3 px-6 py-4.5 border-t border-slate-100 bg-slate-50">
+                <button type="button" className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-full py-2.5 px-5 text-xs cursor-pointer transition-colors" onClick={() => setShowRaiseModal(false)}>Cancel</button>
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-full py-2.5 px-5 text-xs cursor-pointer shadow-sm transition-colors">Submit Request</button>
               </div>
             </form>
           </div>
@@ -311,18 +316,18 @@ export default function MaintenanceManagement() {
 
       {/* Resolve Request Modal */}
       {showResolveModal && selectedRequest && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Resolve Maintenance: MR-{String(selectedRequest.id).padStart(4, '0')}</h3>
-              <button className="modal-close-btn" onClick={() => setShowResolveModal(false)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-bold text-base capitalize tracking-wider">Resolve Maintenance: MR-{String(selectedRequest.id).padStart(4, '0')}</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setShowResolveModal(false)}>&times;</button>
             </div>
             <form onSubmit={handleResolveSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Post-Repair Asset Condition</label>
+              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Post-Repair Asset Condition</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     required
                     value={resolveForm.condition}
                     onChange={(e) => setResolveForm({ ...resolveForm, condition: e.target.value })}
@@ -335,10 +340,10 @@ export default function MaintenanceManagement() {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Resolution Action Log Notes</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Resolution Action Log Notes</label>
                   <textarea
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent h-[100px]"
                     required
                     value={resolveForm.resolution_notes}
                     onChange={(e) => setResolveForm({ ...resolveForm, resolution_notes: e.target.value })}
@@ -346,9 +351,9 @@ export default function MaintenanceManagement() {
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="action-btn secondary" onClick={() => setShowResolveModal(false)}>Cancel</button>
-                <button type="submit" className="action-btn">Complete Resolution</button>
+              <div className="flex justify-end gap-3 px-6 py-4.5 border-t border-slate-100 bg-slate-50">
+                <button type="button" className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-full py-2.5 px-5 text-xs cursor-pointer transition-colors" onClick={() => setShowResolveModal(false)}>Cancel</button>
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-full py-2.5 px-5 text-xs cursor-pointer shadow-sm transition-colors">Complete Resolution</button>
               </div>
             </form>
           </div>

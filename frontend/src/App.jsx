@@ -16,9 +16,6 @@ import AssetAudit from './components/AssetAudit';
 import ReportsAnalytics from './components/ReportsAnalytics';
 import ActivityLogs from './components/ActivityLogs';
 
-import './Auth.css';
-import './AssetFlow.css';
-
 function AppContent() {
   const { user, loading } = useAuth();
   const [currentAuthView, setCurrentAuthView] = useState('login');
@@ -26,18 +23,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        height: '100vh',
-        backgroundColor: '#0f172a',
-        color: '#f8fafc',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '1rem',
-        fontFamily: 'sans-serif'
-      }}>
-        <svg style={{ animation: 'spin 1s linear infinite' }} xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+      <div className="flex h-screen bg-slate-900 text-slate-100 items-center justify-center flex-col gap-4 font-sans">
+        <svg className="animate-spin text-emerald-500" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
         <span>Verifying secure session...</span>
       </div>
     );

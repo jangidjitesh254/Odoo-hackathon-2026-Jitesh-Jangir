@@ -1,18 +1,5 @@
 import React from 'react';
 
-/**
- * Reusable select dropdown component with custom styling and indicators.
- *
- * @param {Object} props
- * @param {string} props.label - Label text for select
- * @param {string} props.id - Select ID and name
- * @param {string} props.value - Selected value
- * @param {function} props.onChange - Selection change handler
- * @param {Array<string|Object>} props.options - Dropdown options (can be string array or objects with {value, label})
- * @param {string} [props.placeholder] - Selection placeholder/disabled initial item
- * @param {boolean} [props.required=false] - Whether dropdown selection is required
- * @param {string} [props.error] - Optional validation error message
- */
 export default function SelectField({
   label,
   id,
@@ -25,20 +12,21 @@ export default function SelectField({
   ...rest
 }) {
   return (
-    <div className="form-group">
-      <label htmlFor={id} className="form-label">
-        {label} {required && <span style={{ color: 'var(--color-error)' }}>*</span>}
+    <div className="mb-4 w-full text-left">
+      <label htmlFor={id} className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
       
-      <div className="input-container">
+      <div className="relative w-full">
         <select
           id={id}
           name={id}
           value={value}
           onChange={onChange}
           required={required}
-          className={`input-field select-field ${error ? 'input-field-error' : ''}`}
-          style={error ? { borderColor: 'var(--color-error)' } : {}}
+          className={`w-full bg-white border text-slate-900 rounded-lg py-2.5 pl-3.5 pr-10 text-sm transition-all appearance-none focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent/20 ${
+            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200'
+          }`}
           {...rest}
         >
           {placeholder && (
@@ -58,26 +46,14 @@ export default function SelectField({
           })}
         </select>
         
-        {/* Custom Chevron Down SVG Arrow */}
-        <span className="select-arrow">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+        {/* Custom Chevron SVG Arrow */}
+        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
         </span>
       </div>
       
       {error && (
-        <span style={{ fontSize: '0.75rem', color: 'var(--color-error)', marginTop: '0.125rem' }}>
+        <span className="text-xs text-red-500 mt-1 block">
           {error}
         </span>
       )}

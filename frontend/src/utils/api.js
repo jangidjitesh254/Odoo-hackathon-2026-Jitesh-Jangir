@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'https://odoo-assetflow-backend.onrender.com/api';
 
 /**
  * Helper to perform fetch requests with automatic authorization headers

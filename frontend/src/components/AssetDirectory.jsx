@@ -82,7 +82,7 @@ export default function AssetDirectory() {
       await api.post('/assets', payload);
       setSuccess('Asset registered successfully');
       setShowRegModal(false);
-      
+
       // Reset form
       setRegForm({
         name: '',
@@ -97,7 +97,6 @@ export default function AssetDirectory() {
         is_bookable: false
       });
 
-      // Reload
       loadAssets();
     } catch (err) {
       setError(err.message || 'Failed to register asset');
@@ -126,34 +125,38 @@ export default function AssetDirectory() {
 
   const getStatusBadge = (status) => {
     const classMap = {
-      'Available': 'badge-available',
-      'Allocated': 'badge-allocated',
-      'Reserved': 'badge-reserved',
-      'Under Maintenance': 'badge-maintenance',
-      'Lost': 'badge-lost',
-      'Retired': 'badge-retired',
-      'Disposed': 'badge-disposed'
+      'Available': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
+      'Allocated': 'bg-blue-50 text-blue-600 border-blue-200/50',
+      'Reserved': 'bg-purple-50 text-purple-600 border-purple-200/50',
+      'Under Maintenance': 'bg-amber-50 text-amber-600 border-amber-200/50',
+      'Lost': 'bg-red-50 text-red-600 border-red-200/50',
+      'Retired': 'bg-slate-100 text-slate-500 border-slate-200/50',
+      'Disposed': 'bg-slate-200 text-slate-700 border-slate-300/50'
     };
-    return <span className={`badge ${classMap[status] || 'badge-retired'}`}>{status}</span>;
+    return (
+      <span className={`text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase border ${classMap[status] || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+        {status}
+      </span>
+    );
   };
 
   return (
     <div>
       {/* Search & Filter Bar */}
-      <div className="section-card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flexGrow: 1, minWidth: '200px' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6 text-left">
+        <div className="flex gap-4 flex-wrap items-center">
+          <div className="flex-grow min-w-[200px]">
             <input
               type="text"
               placeholder="Search by tag, name, serial or location..."
-              className="form-control"
+              className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3.5 text-sm transition-all focus:outline-none focus:border-accent"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             />
           </div>
-          <div style={{ width: '180px' }}>
+          <div className="w-[180px]">
             <select
-              className="form-control"
+              className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3.5 text-sm transition-all focus:outline-none focus:border-accent"
               value={filters.category_id}
               onChange={(e) => setFilters({ ...filters, category_id: e.target.value })}
             >
@@ -163,9 +166,9 @@ export default function AssetDirectory() {
               ))}
             </select>
           </div>
-          <div style={{ width: '180px' }}>
+          <div className="w-[180px]">
             <select
-              className="form-control"
+              className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3.5 text-sm transition-all focus:outline-none focus:border-accent"
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -179,9 +182,9 @@ export default function AssetDirectory() {
               <option value="Disposed">Disposed</option>
             </select>
           </div>
-          <div style={{ width: '180px' }}>
+          <div className="w-[180px]">
             <select
-              className="form-control"
+              className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3.5 text-sm transition-all focus:outline-none focus:border-accent"
               value={filters.is_bookable}
               onChange={(e) => setFilters({ ...filters, is_bookable: e.target.value })}
             >
@@ -191,60 +194,70 @@ export default function AssetDirectory() {
             </select>
           </div>
           {isElevated && (
-            <button className="action-btn" onClick={() => setShowRegModal(true)}>+ Register Asset</button>
+            <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-full py-3 px-6 text-sm flex items-center gap-2 cursor-pointer shadow-sm transition-colors" onClick={() => setShowRegModal(true)}>+ Register Asset</button>
           )}
         </div>
       </div>
 
-      {error && <div className="form-alert form-alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
-      {success && <div className="form-alert form-alert-success" style={{ marginBottom: '1.5rem' }}>{success}</div>}
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200/50 text-red-600 rounded-xl p-3.5 text-xs font-bold text-left mb-6">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/50 text-emerald-600 rounded-xl p-3.5 text-xs font-bold text-left mb-6">
+          {success}
+        </div>
+      )}
 
       {/* Main Asset Directory Table */}
-      <div className="section-card">
-        <div className="section-header">
-          <h3>Asset Directory Listing</h3>
-          <span className="badge badge-allocated">{assets.length} items found</span>
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 text-left">
+        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+          <h3 className="m-0 text-slate-900 font-bold text-base capitalize tracking-wider">Asset Directory Listing</h3>
+          <span className="text-[10px] font-bold rounded-lg px-2.5 py-1 uppercase bg-emerald-50 text-emerald-600 border border-emerald-200/50">{assets.length} items found</span>
         </div>
         {loading ? (
-          <div className="text-muted">Filtering assets inventory...</div>
+          <div className="text-slate-400 text-sm font-semibold py-4">Filtering assets inventory...</div>
         ) : (
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="w-full overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th>Asset Tag</th>
-                  <th>Asset Name</th>
-                  <th>Category</th>
-                  <th>Serial Number</th>
-                  <th>Location</th>
-                  <th>Bookable</th>
-                  <th>Condition</th>
-                  <th>Lifecycle Status</th>
-                  <th>Actions</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Asset Tag</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Asset Name</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Category</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Serial Number</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Location</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Bookable</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Condition</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Lifecycle Status</th>
+                  <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider py-3 border-b border-slate-200 bg-slate-50/50 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {assets.length === 0 ? (
-                  <tr><td colSpan="9" className="text-muted text-center">No assets matched the filters.</td></tr>
+                  <tr><td colSpan="9" className="py-8 text-slate-400 text-xs font-bold text-center">No assets matched the filters.</td></tr>
                 ) : (
                   assets.map(asset => (
                     <tr key={asset.id}>
-                      <td className="font-semibold text-info" style={{ cursor: 'pointer' }} onClick={() => handleViewAssetDetails(asset)}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-semibold text-emerald-600 cursor-pointer" onClick={() => handleViewAssetDetails(asset)}>
                         {asset.asset_tag}
                       </td>
-                      <td className="font-semibold">{asset.name}</td>
-                      <td>{asset.category_name}</td>
-                      <td>{asset.serial_number || <span className="text-muted">N/A</span>}</td>
-                      <td>{asset.location || <span className="text-muted">N/A</span>}</td>
-                      <td>
-                        <span className={`badge ${asset.is_bookable === 1 ? 'badge-available' : 'badge-retired'}`}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs font-bold text-slate-900">{asset.name}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{asset.category_name}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{asset.serial_number || <span className="text-slate-400 font-bold">N/A</span>}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{asset.location || <span className="text-slate-400 font-bold">N/A</span>}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <span className={`text-[10px] font-bold rounded-lg px-2 py-0.5 uppercase border ${
+                          asset.is_bookable === 1 ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 'bg-slate-100 text-slate-500 border-slate-200/50'
+                        }`}>
                           {asset.is_bookable === 1 ? 'Yes' : 'No'}
                         </span>
                       </td>
-                      <td>{asset.condition}</td>
-                      <td>{getStatusBadge(asset.status)}</td>
-                      <td>
-                        <button className="logout-btn" style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => handleViewAssetDetails(asset)}>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs text-slate-600">{asset.condition}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">{getStatusBadge(asset.status)}</td>
+                      <td className="py-3.5 px-4 border-b border-slate-100 text-xs">
+                        <button className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-lg py-1 px-3 text-[10px] cursor-pointer transition-colors" onClick={() => handleViewAssetDetails(asset)}>
                           History
                         </button>
                       </td>
@@ -259,14 +272,14 @@ export default function AssetDirectory() {
 
       {/* Asset History / Details Drawer Modal */}
       {selectedAsset && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '700px' }}>
-            <div className="modal-header">
-              <h3>Asset details: {selectedAsset.asset_tag} ({selectedAsset.name})</h3>
-              <button className="modal-close-btn" onClick={() => setSelectedAsset(null)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-bold text-base capitalize tracking-wider">Asset details: {selectedAsset.asset_tag} ({selectedAsset.name})</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setSelectedAsset(null)}>&times;</button>
             </div>
-            <div className="modal-body" style={{ maxHeight: '450px', overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+              <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                 <div><strong>Category:</strong> {selectedAsset.category_name}</div>
                 <div><strong>Serial Number:</strong> {selectedAsset.serial_number || 'N/A'}</div>
                 <div><strong>Acquisition Cost:</strong> ${selectedAsset.acquisition_cost}</div>
@@ -276,55 +289,55 @@ export default function AssetDirectory() {
               </div>
 
               {loadingHistory ? (
-                <div className="text-muted">Loading asset history...</div>
+                <div className="text-slate-400 text-xs font-semibold py-4">Loading asset history...</div>
               ) : (
                 <>
-                  <h4 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>Allocation History</h4>
+                  <h4 className="border-b border-slate-200 pb-1 font-bold text-xs uppercase tracking-wide text-slate-500">Allocation History</h4>
                   {assetHistory.allocations.length === 0 ? (
-                    <p className="text-muted" style={{ fontSize: '0.85rem' }}>No allocation history recorded for this asset.</p>
+                    <p className="text-slate-400 text-xs font-semibold py-2">No allocation history recorded for this asset.</p>
                   ) : (
-                    <table className="data-table" style={{ fontSize: '0.8rem', marginBottom: '1.5rem' }}>
+                    <table className="w-full border-collapse mb-4">
                       <thead>
                         <tr>
-                          <th>Assigned To</th>
-                          <th>Allocation Date</th>
-                          <th>Return Date</th>
-                          <th>Notes</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Assigned To</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Allocation Date</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Return Date</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Notes</th>
                         </tr>
                       </thead>
                       <tbody>
                         {assetHistory.allocations.map(al => (
-                          <tr key={al.id}>
-                            <td>{al.user_name || al.department_name || 'N/A'}</td>
-                            <td>{new Date(al.allocation_date).toLocaleDateString()}</td>
-                            <td>{al.returned_date ? new Date(al.returned_date).toLocaleDateString() : <span className="text-info font-semibold">Active Possession</span>}</td>
-                            <td>{al.return_notes || 'N/A'}</td>
+                          <tr key={al.id} className="text-xs">
+                            <td className="py-2 border-b border-slate-100 text-slate-900 font-bold">{al.user_name || al.department_name || 'N/A'}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-600">{new Date(al.allocation_date).toLocaleDateString()}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-600">{al.returned_date ? new Date(al.returned_date).toLocaleDateString() : <span className="text-emerald-600 font-bold">Active Possession</span>}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-500">{al.return_notes || 'N/A'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   )}
 
-                  <h4 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>Maintenance History</h4>
+                  <h4 className="border-b border-slate-200 pb-1 font-bold text-xs uppercase tracking-wide text-slate-500">Maintenance History</h4>
                   {assetHistory.maintenance.length === 0 ? (
-                    <p className="text-muted" style={{ fontSize: '0.85rem' }}>No maintenance history recorded for this asset.</p>
+                    <p className="text-slate-400 text-xs font-semibold py-2">No maintenance history recorded for this asset.</p>
                   ) : (
-                    <table className="data-table" style={{ fontSize: '0.8rem' }}>
+                    <table className="w-full border-collapse">
                       <thead>
                         <tr>
-                          <th>Technician</th>
-                          <th>Description</th>
-                          <th>Resolved Date</th>
-                          <th>Status</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Technician</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Description</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Resolved Date</th>
+                          <th className="text-left text-[9px] font-bold text-slate-400 uppercase py-2 border-b border-slate-200">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {assetHistory.maintenance.map(m => (
-                          <tr key={m.id}>
-                            <td>{m.technician_name || 'None assigned'}</td>
-                            <td>{m.description}</td>
-                            <td>{m.resolved_date ? new Date(m.resolved_date).toLocaleDateString() : 'Active Repair'}</td>
-                            <td>{m.status}</td>
+                          <tr key={m.id} className="text-xs">
+                            <td className="py-2 border-b border-slate-100 text-slate-900 font-bold">{m.technician_name || 'None assigned'}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-600">{m.description}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-600">{m.resolved_date ? new Date(m.resolved_date).toLocaleDateString() : 'Active Repair'}</td>
+                            <td className="py-2 border-b border-slate-100 text-slate-600">{m.status}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -333,8 +346,8 @@ export default function AssetDirectory() {
                 </>
               )}
             </div>
-            <div className="modal-footer">
-              <button className="action-btn" onClick={() => setSelectedAsset(null)}>Close</button>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+              <button className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-xl py-2.5 px-5 text-sm cursor-pointer shadow-sm" onClick={() => setSelectedAsset(null)}>Close</button>
             </div>
           </div>
         </div>
@@ -342,28 +355,28 @@ export default function AssetDirectory() {
 
       {/* Asset Register Form Modal */}
       {showRegModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Register New Physical Asset</h3>
-              <button className="modal-close-btn" onClick={() => setShowRegModal(false)}>&times;</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden text-left flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+              <h3 className="text-slate-900 font-bold text-base capitalize tracking-wider">Register New Physical Asset</h3>
+              <button className="text-2xl text-slate-400 hover:text-slate-600 bg-none border-none cursor-pointer" onClick={() => setShowRegModal(false)}>&times;</button>
             </div>
             <form onSubmit={handleRegisterSubmit}>
-              <div className="modal-body" style={{ maxHeight: '450px', overflowY: 'auto' }}>
-                <div className="form-group">
-                  <label>Asset Name *</label>
+              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Asset Name *</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     required
                     value={regForm.name}
                     onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Category *</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Category *</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     required
                     value={regForm.category_id}
                     onChange={(e) => setRegForm({ ...regForm, category_id: e.target.value })}
@@ -374,38 +387,38 @@ export default function AssetDirectory() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Serial Number</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Serial Number</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={regForm.serial_number}
                     onChange={(e) => setRegForm({ ...regForm, serial_number: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Acquisition Date</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Acquisition Date</label>
                   <input
                     type="date"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={regForm.acquisition_date}
                     onChange={(e) => setRegForm({ ...regForm, acquisition_date: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Acquisition Cost ($)</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Acquisition Cost ($)</label>
                   <input
                     type="number"
                     step="0.01"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={regForm.acquisition_cost}
                     onChange={(e) => setRegForm({ ...regForm, acquisition_cost: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Condition</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Condition</label>
                   <select
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={regForm.condition}
                     onChange={(e) => setRegForm({ ...regForm, condition: e.target.value })}
                   >
@@ -416,29 +429,29 @@ export default function AssetDirectory() {
                     <option value="Damaged">Damaged</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Storage / Current Location</label>
+                <div className="w-full text-left">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Storage / Current Location</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
                     value={regForm.location}
                     onChange={(e) => setRegForm({ ...regForm, location: e.target.value })}
                   />
                 </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                <div className="flex items-center gap-2 mt-2 w-full justify-start">
                   <input
                     type="checkbox"
                     id="is_bookable"
                     checked={regForm.is_bookable}
                     onChange={(e) => setRegForm({ ...regForm, is_bookable: e.target.checked })}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    className="w-4 h-4 accent-accent border border-slate-300 rounded cursor-pointer"
                   />
-                  <label htmlFor="is_bookable" style={{ margin: 0, cursor: 'pointer' }}>Mark as a shared/bookable resource (Room, Vehicle, etc.)</label>
+                  <label htmlFor="is_bookable" className="text-xs text-slate-700 font-bold cursor-pointer">Mark as a shared/bookable resource (Room, Vehicle, etc.)</label>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="action-btn secondary" onClick={() => setShowRegModal(false)}>Cancel</button>
-                <button type="submit" className="action-btn">Register</button>
+              <div className="flex justify-end gap-3 px-6 py-4.5 border-t border-slate-100 bg-slate-50">
+                <button type="button" className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-full py-2.5 px-5 text-xs cursor-pointer transition-colors" onClick={() => setShowRegModal(false)}>Cancel</button>
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-bold border-none rounded-full py-2.5 px-5 text-xs cursor-pointer shadow-sm transition-colors">Register</button>
               </div>
             </form>
           </div>

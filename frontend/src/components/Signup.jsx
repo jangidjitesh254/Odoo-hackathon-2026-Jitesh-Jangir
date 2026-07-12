@@ -3,15 +3,6 @@ import InputField from './common/InputField';
 import SelectField from './common/SelectField';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Signup Component for AssetFlow.
- * Includes fields for Full Name, Email, Department, Password, and Confirm Password.
- * Displays information stating that only Employee accounts are created directly,
- * and roles are assigned by an Admin later.
- *
- * @param {Object} props
- * @param {function} props.onNavigateToLogin - Callback to navigate to Login page
- */
 export default function Signup({ onNavigateToLogin }) {
   const { register } = useAuth();
   const [formData, setFormData] = useState({
@@ -27,7 +18,6 @@ export default function Signup({ onNavigateToLogin }) {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
 
-  // Fetch departments on mount
   useEffect(() => {
     async function fetchDepts() {
       try {
@@ -50,7 +40,6 @@ export default function Signup({ onNavigateToLogin }) {
       ...prev,
       [name]: value,
     }));
-    // Clear errors for that field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -102,14 +91,14 @@ export default function Signup({ onNavigateToLogin }) {
 
   return (
     <>
-      <div className="auth-header">
-        <h1>Create Account</h1>
-        <p>Get started with the AssetFlow Management System</p>
+      <div className="text-center mb-6">
+        <h1 className="text-white text-2xl font-extrabold tracking-tight mb-1.5">Create Account</h1>
+        <p className="text-slate-400 text-sm">Get started with the AssetFlow Management System</p>
       </div>
 
       {/* Role Assignment Disclaimer Banner */}
-      <div className="role-notice-banner">
-        <span className="role-notice-icon">
+      <div className="flex gap-3 bg-blue-950/40 border border-blue-800/50 text-blue-200 rounded-lg p-3.5 text-xs text-left mb-6 leading-relaxed">
+        <span className="text-blue-400 flex-shrink-0 mt-0.5">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -126,13 +115,13 @@ export default function Signup({ onNavigateToLogin }) {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
         </span>
-        <p className="role-notice-text">
+        <p className="m-0">
           Registration sets up an <strong>Employee account</strong> with standard privileges. System administrators will configure role-based permissions (Asset Manager, Admin, Department Head) in the Employee Directory once approved.
         </p>
       </div>
 
       {errors.general && (
-        <div className="form-alert form-alert-error">
+        <div className="flex items-center gap-2 bg-red-950/40 border border-red-800/60 text-red-200 rounded-lg p-3.5 text-xs text-left mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -153,7 +142,7 @@ export default function Signup({ onNavigateToLogin }) {
       )}
 
       {success && (
-        <div className="form-alert form-alert-success">
+        <div className="flex items-center gap-2 bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 rounded-lg p-3.5 text-xs text-left mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -172,7 +161,7 @@ export default function Signup({ onNavigateToLogin }) {
         </div>
       )}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         {/* Full Name */}
         <InputField
           label="Full Name"
@@ -233,7 +222,11 @@ export default function Signup({ onNavigateToLogin }) {
         />
 
         {/* Signup Submit Button */}
-        <button type="submit" className="submit-btn" disabled={loading}>
+        <button
+          type="submit"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <svg
@@ -269,11 +262,11 @@ export default function Signup({ onNavigateToLogin }) {
       </form>
 
       {/* Switch Footer Link */}
-      <div className="auth-switch-footer">
+      <div className="text-center text-xs font-semibold text-slate-500 mt-6">
         Already have an account?
         <a
           href="#login"
-          className="auth-switch-link"
+          className="text-emerald-400 hover:text-emerald-300 transition-colors font-bold ml-1"
           onClick={(e) => {
             e.preventDefault();
             onNavigateToLogin();
