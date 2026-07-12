@@ -147,6 +147,9 @@ export default function MainLayout({ children, activeTab, onTabChange }) {
     <div className="app-container">
       {/* Sidebar Drawer Panel */}
       <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-content">
+
+        
         <div className="sidebar-brand">
           <div className="brand-logo" style={{ cursor: 'pointer' }} onClick={() => setIsCollapsed(!isCollapsed)}>
             {/* Donezo Style Logo Icon */}
@@ -211,6 +214,7 @@ export default function MainLayout({ children, activeTab, onTabChange }) {
             </div>
           </div>
         )}
+        </div>
       </aside>
 
       {/* Main Workspace Area */}

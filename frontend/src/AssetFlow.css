@@ -22,15 +22,15 @@
   --info-bg: hsl(200, 95%, 93%);
 
   /* Donezo Light Backgrounds */
-  --dark-bg: hsl(210, 20%, 98%); /* Soft White-Gray Page Base */
-  --panel-bg: #ffffff;           /* Clean White Panel Cards */
+  --dark-bg: #ffffff;            /* White page background */
+  --panel-bg: #f8fafc;           /* Light grey card panels */
   --border-color: #e2e8f0;       /* Thin Grey Divider */
   --border-focus: var(--accent);
   
   --text-primary: #1a202c;       /* Near Black Text */
   --text-secondary: #4a5568;     /* Dark Slate Text */
   --text-muted: #718096;         /* Cool Muted Gray Text */
-  --input-bg: #f8fafc;
+  --input-bg: #ffffff;           /* White inputs for card contrast */
   --header-bg: #ffffff;
 }
 
@@ -52,7 +52,7 @@ body {
 /* Sidebar Styling */
 .sidebar {
   width: 260px;
-  background: #ffffff;
+  background: #f8fafc;           /* Light grey sidebar */
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
