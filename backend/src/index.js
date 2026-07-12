@@ -11,6 +11,7 @@ import maintenanceRoutes from './routes/maintenance.js';
 import organizationRoutes from './routes/organization.js';
 import allocationRoutes from './routes/allocations.js';
 import transferRoutes from './routes/transfers.js';
+import auditRoutes from './routes/audit.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -38,6 +39,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/transfers', transferRoutes);
+app.use('/api/audits', auditRoutes);
 
 // Unhandled Endpoint Handler
 app.use((req, res, next) => {
