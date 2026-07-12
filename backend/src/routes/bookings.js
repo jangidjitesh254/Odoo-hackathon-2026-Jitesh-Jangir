@@ -5,8 +5,59 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 /**
+ * Helper: Sync booking states (Ongoing/Completed) based on current timestamp
+ * and auto-dispatch Booking Reminders for slots starting in the next 30 minutes.
+ */
+async function syncBookingStatesAndReminders(db) {
+  // 1. Transition upcoming bookings to ongoing if current time is within range
+  await db.run(
+    `UPDATE bookings 
+     SET status = 'Ongoing', updated_at = CURRENT_TIMESTAMP 
+     WHERE status = 'Upcoming' AND start_time <= NOW() AND end_time > NOW()`
+  );
+
+  // 2. Transition ongoing/upcoming bookings to completed if end_time has passed
+  await db.run(
+    `UPDATE bookings 
+     SET status = 'Completed', updated_at = CURRENT_TIMESTAMP 
+     WHERE status IN ('Upcoming', 'Ongoing') AND end_time <= NOW()`
+  );
+
+  // 3. Scan for bookings starting in the next 30 minutes to generate reminders
+  const startingSoon = await db.all(
+    `SELECT b.id, b.user_id, b.start_time, a.name as asset_name 
+     FROM bookings b
+     JOIN assets a ON b.asset_id = a.id
+     WHERE b.status = 'Upcoming'
+       AND b.start_time <= NOW() + INTERVAL '30 minutes'
+       AND b.start_time > NOW()`
+  );
+
+  for (const booking of startingSoon) {
+    const existingReminder = await db.get(
+      `SELECT id FROM notifications 
+       WHERE user_id = ? AND type = 'Booking Reminder' AND message LIKE ?
+       LIMIT 1`,
+      booking.user_id,
+      `%booking #${booking.id}%`
+    );
+
+    if (!existingReminder) {
+      const timeStr = new Date(booking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      await db.run(
+        `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+        booking.user_id,
+        'Booking Reminder',
+        `Reminder: Your booking for ${booking.asset_name} (booking #${booking.id}) is scheduled to start soon at ${timeStr}.`,
+        'Booking Reminder'
+      );
+    }
+  }
+}
+
+/**
  * @route POST /api/bookings
- * @desc Quick Action: Book a shared resource (Room/Vehicle/Equipment) with overlap validation
+ * @desc Book a shared resource (Room/Vehicle/Equipment) with overlap validation
  */
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
@@ -24,6 +75,9 @@ router.post('/', authenticateToken, async (req, res, next) => {
     }
 
     const db = getDb();
+
+    // Sync booking states
+    await syncBookingStatesAndReminders(db);
 
     // 1. Verify asset exists, is bookable, and is not retired/disposed
     const asset = await db.get(
@@ -44,15 +98,14 @@ router.post('/', authenticateToken, async (req, res, next) => {
     }
 
     // 2. Validate booking overlaps
-    // An overlap occurs if: start_time < existing.end_time AND end_time > existing.start_time
     const overlappingBooking = await db.get(
       `SELECT b.*, u.name as user_name 
        FROM bookings b
        JOIN users u ON b.user_id = u.id
        WHERE b.asset_id = ? 
          AND b.status != 'Cancelled'
-         AND datetime(b.start_time) < datetime(?) 
-         AND datetime(b.end_time) > datetime(?)
+         AND b.start_time < ? 
+         AND b.end_time > ?
        LIMIT 1`,
       asset_id,
       endDt.toISOString(),
@@ -118,6 +171,9 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const { asset_id } = req.query;
     const db = getDb();
 
+    // Sync booking states
+    await syncBookingStatesAndReminders(db);
+
     let query = `
       SELECT b.*, a.name as asset_name, a.asset_tag, u.name as user_name 
       FROM bookings b
@@ -136,6 +192,177 @@ router.get('/', authenticateToken, async (req, res, next) => {
 
     const bookings = await db.all(query, ...params);
     res.json({ bookings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route POST /api/bookings/:id/cancel
+ * @desc Cancel an upcoming booking
+ */
+router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const db = getDb();
+
+    // Sync states first
+    await syncBookingStatesAndReminders(db);
+
+    const booking = await db.get(
+      `SELECT b.*, a.name as asset_name FROM bookings b JOIN assets a ON b.asset_id = a.id WHERE b.id = ?`,
+      id
+    );
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking record not found' });
+    }
+
+    if (booking.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Booking is already cancelled' });
+    }
+
+    if (booking.status === 'Completed') {
+      return res.status(400).json({ error: 'Cannot cancel a completed booking' });
+    }
+
+    // Cancel booking
+    await db.run("UPDATE bookings SET status = 'Cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
+
+    // Log action
+    await db.run(
+      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Cancel Booking', ?)`,
+      req.user.id,
+      `Cancelled booking (ID: ${id}) for resource ${booking.asset_name}`
+    );
+
+    // Send notification
+    await db.run(
+      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+      booking.user_id,
+      'Booking Cancelled',
+      `Your booking for ${booking.asset_name} scheduled for ${booking.start_time} has been cancelled.`,
+      'Booking Cancelled'
+    );
+
+    res.json({
+      message: 'Booking cancelled successfully',
+      bookingId: id,
+      status: 'Cancelled'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route PUT /api/bookings/:id
+ * @desc Reschedule a booking with overlap check
+ */
+router.put('/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { start_time, end_time } = req.body;
+
+    if (!start_time || !end_time) {
+      return res.status(400).json({ error: 'Rescheduled start time and end time are required' });
+    }
+
+    const startDt = new Date(start_time);
+    const endDt = new Date(end_time);
+
+    if (startDt >= endDt) {
+      return res.status(400).json({ error: 'Start time must be before end time' });
+    }
+
+    const db = getDb();
+
+    // Sync booking states
+    await syncBookingStatesAndReminders(db);
+
+    const booking = await db.get(
+      `SELECT b.*, a.name as asset_name FROM bookings b JOIN assets a ON b.asset_id = a.id WHERE b.id = ?`,
+      id
+    );
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking record not found' });
+    }
+
+    if (booking.status === 'Cancelled' || booking.status === 'Completed') {
+      return res.status(400).json({ error: `Cannot reschedule a ${booking.status} booking` });
+    }
+
+    // Overlap validation check (excluding current booking ID)
+    const overlappingBooking = await db.get(
+      `SELECT b.*, u.name as user_name 
+       FROM bookings b
+       JOIN users u ON b.user_id = u.id
+       WHERE b.asset_id = ? 
+         AND b.id != ?
+         AND b.status != 'Cancelled'
+         AND b.start_time < ? 
+         AND b.end_time > ?
+       LIMIT 1`,
+      booking.asset_id,
+      id,
+      endDt.toISOString(),
+      startDt.toISOString()
+    );
+
+    if (overlappingBooking) {
+      return res.status(400).json({
+        error: 'Overlap validation failed',
+        message: `This resource is already booked by ${overlappingBooking.user_name} from ${overlappingBooking.start_time} to ${overlappingBooking.end_time}.`
+      });
+    }
+
+    // Determine the new status (Upcoming or Ongoing)
+    const now = new Date();
+    let newStatus = 'Upcoming';
+    if (startDt <= now && endDt > now) {
+      newStatus = 'Ongoing';
+    } else if (endDt <= now) {
+      newStatus = 'Completed';
+    }
+
+    // Update times & status
+    await db.run(
+      `UPDATE bookings 
+       SET start_time = ?, end_time = ?, status = ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      startDt.toISOString(),
+      endDt.toISOString(),
+      newStatus,
+      id
+    );
+
+    // Log action
+    await db.run(
+      `INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'Reschedule Booking', ?)`,
+      req.user.id,
+      `Rescheduled booking (ID: ${id}) for ${booking.asset_name} to ${start_time} - ${end_time}`
+    );
+
+    // Notify user
+    await db.run(
+      `INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)`,
+      booking.user_id,
+      'Booking Rescheduled',
+      `Your booking for ${booking.asset_name} has been rescheduled to ${start_time} - ${end_time}.`,
+      'Booking Rescheduled'
+    );
+
+    res.json({
+      message: 'Booking rescheduled successfully',
+      booking: {
+        id,
+        asset_id: booking.asset_id,
+        start_time: startDt.toISOString(),
+        end_time: endDt.toISOString(),
+        status: newStatus
+      }
+    });
   } catch (error) {
     next(error);
   }

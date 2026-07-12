@@ -8,6 +8,13 @@ import dashboardRoutes from './routes/dashboard.js';
 import assetRoutes from './routes/assets.js';
 import bookingRoutes from './routes/bookings.js';
 import maintenanceRoutes from './routes/maintenance.js';
+import organizationRoutes from './routes/organization.js';
+import allocationRoutes from './routes/allocations.js';
+import transferRoutes from './routes/transfers.js';
+import auditRoutes from './routes/audit.js';
+import reportRoutes from './routes/reports.js';
+import notificationRoutes from './routes/notifications.js';
+import auditLogsRoutes from './routes/auditLogs.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -32,6 +39,13 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/organization', organizationRoutes);
+app.use('/api/allocations', allocationRoutes);
+app.use('/api/transfers', transferRoutes);
+app.use('/api/audits', auditRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/audit-logs', auditLogsRoutes);
 
 // Unhandled Endpoint Handler
 app.use((req, res, next) => {

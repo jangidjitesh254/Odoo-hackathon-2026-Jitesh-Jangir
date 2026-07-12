@@ -1,26 +1,22 @@
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 import { initDb, getDb } from '../config/db.js';
+
+dotenv.config();
 
 async function seed() {
   console.log('Starting database seeding...');
   await initDb();
   const db = getDb();
 
-  // Clear existing data (order is important to prevent FK violations)
-  console.log('Clearing existing tables...');
-  await db.run('DELETE FROM audit_logs');
-  await db.run('DELETE FROM notifications');
-  await db.run('DELETE FROM maintenance_requests');
-  await db.run('DELETE FROM bookings');
-  await db.run('DELETE FROM transfers');
-  await db.run('DELETE FROM allocations');
-  await db.run('DELETE FROM assets');
-  await db.run('DELETE FROM users');
-  await db.run('DELETE FROM departments');
-  await db.run('DELETE FROM categories');
-
-  // Reset SQLITE sequence autoincrements
-  await db.run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'departments', 'categories', 'assets', 'allocations', 'transfers', 'bookings', 'maintenance_requests', 'notifications', 'audit_logs')");
+  // Clear existing data & restart sequences recursively
+  console.log('Clearing existing tables & restarting sequences (PostgreSQL)...');
+  await db.exec(`
+    TRUNCATE TABLE 
+      audit_logs, notifications, maintenance_requests, bookings, transfers, 
+      allocations, assets, users, departments, categories 
+    RESTART IDENTITY CASCADE
+  `);
 
   console.log('Seeding departments...');
   const itDeptResult = await db.run(`INSERT INTO departments (name, status) VALUES ('IT Department', 'Active')`);
@@ -110,7 +106,7 @@ async function seed() {
   // Asset 1: Lenovo Laptop (Allocated)
   const lenovoResult = await db.run(
     `INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) 
-     VALUES (?, ?, ?, ?, date('now', '-1 year'), 1200.0, 'Good', 'IT Office Room 101', 'Allocated')`,
+     VALUES (?, ?, ?, ?, CURRENT_DATE - INTERVAL '1 year', 1200.0, 'Good', 'IT Office Room 101', 'Allocated')`,
     'Lenovo ThinkPad X1 Carbon',
     electronicsId,
     'AF-0001',
@@ -121,7 +117,7 @@ async function seed() {
   // Asset 2: Dell Laptop (Available)
   const dellResult = await db.run(
     `INSERT INTO assets (name, category_id, asset_tag, serial_number, acquisition_date, acquisition_cost, condition, location, status) 
-     VALUES (?, ?, ?, ?, date('now', '-6 months'), 1000.0, 'Good', 'IT Storage Locker', 'Available')`,
+     VALUES (?, ?, ?, ?, CURRENT_DATE - INTERVAL '6 months', 1000.0, 'Good', 'IT Storage Locker', 'Available')`,
     'Dell Latitude 5420',
     electronicsId,
     'AF-0002',
@@ -164,7 +160,7 @@ async function seed() {
   // Overdue allocation (Lenovo Laptop to Priya)
   await db.run(
     `INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) 
-     VALUES (?, ?, ?, datetime('now', '-15 days'), datetime('now', '-5 days'), 'Active')`,
+     VALUES (?, ?, ?, NOW() - INTERVAL '15 days', NOW() - INTERVAL '5 days', 'Active')`,
     lenovoId,
     priyaId,
     managerId
@@ -173,7 +169,7 @@ async function seed() {
   // Active upcoming return allocation (Office Chair to Priya)
   await db.run(
     `INSERT INTO allocations (asset_id, user_id, allocated_by, allocation_date, expected_return_date, status) 
-     VALUES (?, ?, ?, datetime('now', '-2 days'), datetime('now', '+3 days'), 'Active')`,
+     VALUES (?, ?, ?, NOW() - INTERVAL '2 days', NOW() + INTERVAL '3 days', 'Active')`,
     chairId,
     priyaId,
     managerId
@@ -183,7 +179,7 @@ async function seed() {
   // Ongoing booking (Conference Room A booked by Priya)
   await db.run(
     `INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) 
-     VALUES (?, ?, datetime('now', '-30 minutes'), datetime('now', '+90 minutes'), 'Ongoing')`,
+     VALUES (?, ?, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'Ongoing')`,
     confRoomId,
     priyaId
   );
@@ -191,7 +187,7 @@ async function seed() {
   // Upcoming booking (Tesla Model 3 booked by Dept Head)
   await db.run(
     `INSERT INTO bookings (asset_id, user_id, start_time, end_time, status) 
-     VALUES (?, ?, datetime('now', '+2 hours'), datetime('now', '+5 hours'), 'Upcoming')`,
+     VALUES (?, ?, NOW() + INTERVAL '2 hours', NOW() + INTERVAL '5 hours', 'Upcoming')`,
     teslaId,
     headId
   );
