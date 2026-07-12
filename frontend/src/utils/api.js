@@ -1,4 +1,6 @@
-const BASE_URL = 'https://odoo-assetflow-backend.onrender.com/api';
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://odoo-assetflow-backend.onrender.com/api';
 
 /**
  * Helper to perform fetch requests with automatic authorization headers
