@@ -49,7 +49,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       activeBookingsQuery = `
         SELECT COUNT(*) as count FROM bookings 
         WHERE status = 'Ongoing' 
-           OR (status = 'Upcoming' AND datetime(start_time) <= datetime('now') AND datetime(end_time) >= datetime('now'))
+           OR (status = 'Upcoming' AND start_time <= NOW() AND end_time >= NOW())
       `;
       
       pendingTransfersQuery = `SELECT COUNT(*) as count FROM transfers WHERE status = 'Pending'`;
@@ -58,8 +58,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         SELECT COUNT(*) as count FROM allocations 
         WHERE status = 'Active' 
           AND returned_date IS NULL 
-          AND datetime(expected_return_date) >= datetime('now') 
-          AND datetime(expected_return_date) <= datetime('now', '+7 days')
+          AND expected_return_date >= NOW() 
+          AND expected_return_date <= NOW() + INTERVAL '7 days'
       `;
 
       overdueListQuery = `
@@ -70,7 +70,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) < datetime('now')
+          AND al.expected_return_date < NOW()
         ORDER BY al.expected_return_date ASC
       `;
 
@@ -82,8 +82,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) >= datetime('now') 
-          AND datetime(al.expected_return_date) <= datetime('now', '+7 days')
+          AND al.expected_return_date >= NOW() 
+          AND al.expected_return_date <= NOW() + INTERVAL '7 days'
         ORDER BY al.expected_return_date ASC
       `;
 
@@ -116,7 +116,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       activeBookingsQuery = `
         SELECT COUNT(*) as count FROM bookings b
         JOIN users u ON b.user_id = u.id
-        WHERE (b.status = 'Ongoing' OR (b.status = 'Upcoming' AND datetime(b.start_time) <= datetime('now') AND datetime(b.end_time) >= datetime('now')))
+        WHERE (b.status = 'Ongoing' OR (b.status = 'Upcoming' AND b.start_time <= NOW() AND b.end_time >= NOW()))
           AND u.department_id = ?
       `;
       params.push(departmentId);
@@ -136,8 +136,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN users u ON al.user_id = u.id 
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) >= datetime('now') 
-          AND datetime(al.expected_return_date) <= datetime('now', '+7 days')
+          AND al.expected_return_date >= NOW() 
+          AND al.expected_return_date <= NOW() + INTERVAL '7 days'
           AND (al.department_id = ? OR u.department_id = ?)
       `;
       params.push(departmentId, departmentId);
@@ -150,7 +150,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) < datetime('now')
+          AND al.expected_return_date < NOW()
           AND (al.department_id = ? OR u.department_id = ?)
         ORDER BY al.expected_return_date ASC
       `;
@@ -164,8 +164,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) >= datetime('now') 
-          AND datetime(al.expected_return_date) <= datetime('now', '+7 days')
+          AND al.expected_return_date >= NOW() 
+          AND al.expected_return_date <= NOW() + INTERVAL '7 days'
           AND (al.department_id = ? OR u.department_id = ?)
         ORDER BY al.expected_return_date ASC
       `;
@@ -189,7 +189,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       // Bookings active for this user
       activeBookingsQuery = `
         SELECT COUNT(*) as count FROM bookings 
-        WHERE (status = 'Ongoing' OR (status = 'Upcoming' AND datetime(start_time) <= datetime('now') AND datetime(end_time) >= datetime('now')))
+        WHERE (status = 'Ongoing' OR (status = 'Upcoming' AND start_time <= NOW() AND end_time >= NOW()))
           AND user_id = ?
       `;
       params.push(userId);
@@ -203,8 +203,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         SELECT COUNT(*) as count FROM allocations 
         WHERE status = 'Active' 
           AND returned_date IS NULL 
-          AND datetime(expected_return_date) >= datetime('now') 
-          AND datetime(expected_return_date) <= datetime('now', '+7 days')
+          AND expected_return_date >= NOW() 
+          AND expected_return_date <= NOW() + INTERVAL '7 days'
           AND user_id = ?
       `;
       params.push(userId);
@@ -217,7 +217,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) < datetime('now')
+          AND al.expected_return_date < NOW()
           AND al.user_id = ?
         ORDER BY al.expected_return_date ASC
       `;
@@ -231,8 +231,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         LEFT JOIN departments d ON al.department_id = d.id
         WHERE al.status = 'Active' 
           AND al.returned_date IS NULL 
-          AND datetime(al.expected_return_date) >= datetime('now') 
-          AND datetime(al.expected_return_date) <= datetime('now', '+7 days')
+          AND al.expected_return_date >= NOW() 
+          AND al.expected_return_date <= NOW() + INTERVAL '7 days'
           AND al.user_id = ?
         ORDER BY al.expected_return_date ASC
       `;

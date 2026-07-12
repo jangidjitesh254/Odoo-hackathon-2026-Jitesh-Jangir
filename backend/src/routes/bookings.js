@@ -51,8 +51,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
        JOIN users u ON b.user_id = u.id
        WHERE b.asset_id = ? 
          AND b.status != 'Cancelled'
-         AND datetime(b.start_time) < datetime(?) 
-         AND datetime(b.end_time) > datetime(?)
+         AND b.start_time < ? 
+         AND b.end_time > ?
        LIMIT 1`,
       asset_id,
       endDt.toISOString(),
