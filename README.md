@@ -8,9 +8,22 @@ This repository contains both the **Express Node.js Backend** and the **Vite Rea
 
 ## Technical Architecture
 
-* **Frontend**: React, Vite, Vanilla CSS.
+* **Frontend**: React, Vite, Tailwind CSS v4.
 * **Backend**: Node.js, Express, PostgreSQL (`pg` connection pool with SQLite queries backward compatibility wrapper).
 * **Database**: PostgreSQL (Neon Cloud Database).
+
+---
+
+## Demo Credentials
+
+You can use the following seeded accounts to log in and explore different role-based workflows (roles, permissions, and department boundaries):
+
+| Role | Email Address | Password | Description / Capabilities |
+| :--- | :--- | :--- | :--- |
+| **System Admin** | `admin@assetflow.com` | `admin123` | Full system control, role promotion, circular hierarchy resolution. |
+| **Asset Manager** | `manager@assetflow.com` | `manager123` | Asset registration, allocations, transfer processing, and audit control. |
+| **Department Head** | `head@assetflow.com` | `head123` | Department-scoped approval routing, request review, and department audits. |
+| **Employee** | `priya@assetflow.com` | `employee123` | Raising allocations, room booking, requesting repairs, and transfer requests. |
 
 ---
 

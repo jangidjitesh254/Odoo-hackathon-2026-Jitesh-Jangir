@@ -23,6 +23,15 @@ export default function Login({ onNavigateToSignup }) {
     if (error) setError('');
   };
 
+  const handleQuickFill = (email, password) => {
+    setFormData((prev) => ({
+      ...prev,
+      email,
+      password,
+    }));
+    if (error) setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -49,7 +58,43 @@ export default function Login({ onNavigateToSignup }) {
     <>
       <div className="text-center mb-6">
         <h1 className="text-slate-900 text-2xl font-bold tracking-tight mb-1.5">Welcome Back</h1>
-        <p className="text-slate-400 text-sm">Please enter your credentials to access your account</p>
+        <p className="text-slate-400 text-sm mb-4">Please enter your credentials to access your account</p>
+
+        <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 mb-2 text-left">
+          <h3 className="text-slate-700 text-xs font-bold uppercase tracking-wider mb-2.5">
+            Quick-Fill Demo Accounts:
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl py-2 px-3 text-xs font-bold cursor-pointer transition-colors text-center"
+              onClick={() => handleQuickFill('admin@assetflow.com', 'admin123')}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl py-2 px-3 text-xs font-bold cursor-pointer transition-colors text-center"
+              onClick={() => handleQuickFill('manager@assetflow.com', 'manager123')}
+            >
+              Asset Manager
+            </button>
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl py-2 px-3 text-xs font-bold cursor-pointer transition-colors text-center"
+              onClick={() => handleQuickFill('head@assetflow.com', 'head123')}
+            >
+              Dept Head
+            </button>
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl py-2 px-3 text-xs font-bold cursor-pointer transition-colors text-center"
+              onClick={() => handleQuickFill('priya@assetflow.com', 'employee123')}
+            >
+              Employee
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && (
