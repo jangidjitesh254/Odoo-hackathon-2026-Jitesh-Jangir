@@ -282,12 +282,23 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const overdueReturns = await db.all(overdueListQuery, ...listParams);
     const upcomingReturnsList = await db.all(upcomingListQuery, ...listParams);
 
+    // Fetch recent unread notifications for the user (to surface activity alerts directly on the dashboard)
+    const notifications = await db.all(
+      `SELECT id, title, message, type, is_read, created_at 
+       FROM notifications 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 5`,
+      userId
+    );
+
     res.json({
       role,
       departmentId,
       kpis,
       overdueReturns,
-      upcomingReturns: upcomingReturnsList
+      upcomingReturns: upcomingReturnsList,
+      recentNotifications: notifications
     });
 
   } catch (error) {
